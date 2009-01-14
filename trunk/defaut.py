@@ -1,5 +1,7 @@
-"""elementary definition of two simple types
-    Matrix (as list of list) and WordMorphism (as dictionnary)
+r"""
+elementary definition of two simple types :
+Matrix (as list of list)
+WordMorphism (as dictionnary)
 """
 
 def reversed_enumerate(l) :
@@ -8,8 +10,12 @@ def reversed_enumerate(l) :
 
 class WordMorphism(dict) :
     """implementation of elementary word morphism
-    image of a word (it's a callable from a string or a list)
+    image of a word (it's callable from a string or a list)
     composition as multiplication
+
+    sage : m = WordMorphism({'a':'ab','b':'bca','c':'ca'})
+    sage : m('abc')
+    abbcaca
     """
 
     def __repr__(self) :
@@ -32,7 +38,4 @@ class WordMorphism(dict) :
         for letter in self :
             if letter not in other : d[letter] = self[letter]
 
-        return d        
-
-
-
+        return d
