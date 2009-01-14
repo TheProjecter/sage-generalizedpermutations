@@ -1,31 +1,36 @@
-"""Definition of labeled type permutation
+r"""
+Definition of labeled type permutation
 
-  a labeled (generalized) permutation is better suited to study
-  dynamics of a translation surface than reduced object. To study
-  strata prefer reduced object (Rauzy diagrams are significantly
-  smaller ex. for ('a b d b e','e d c a c') the labeled Rauzy diagram
-  contains 8760 permutations, and the reduced only 73).
+    A labeled (generalized) permutation is better suited to study dynamics of
+    a translation surface than reduced object. To study strata prefer reduced
+    object (Rauzy diagrams are significantly smaller ex. for the permutation
+    ('a b d b e','e d c a c') the labeled Rauzy diagram contains 8760
+    permutations, and the reduced only 73).
+
+AUTHORS:
+    -- Vincent Delecroix (2008-12-20) : initial version
+
+
+    For creation of a labeled permutation simply use the class factory,
+    GeneralizedPermutation :
+    sage : p = GeneralizedPermutation('a b c', 'c b a')
+
+    or eventually
+    sage : p = GeneralizedPermutation('a b c', 'c b a', reduced = False)
+
+    The same thing works for Rauzy diagrams :
+    sage : d1 = RauzyDiagram('a b c', 'c b a')
+    sage : d2 = RauzyDiagram('a b c', 'c b a', reduced = False)
+
+    You can compose matrix or substitution along a path in the Rauzy diagram :
+    sage : d = RauzyDiagram('a b c', 'c b a')
+    sage : s = d.path_to_substitution(0,0,1,0,1)
+    sage : m = d.path_to_matrix(0,0,1,0,1)
+
 """
 
-#try :
-#    import sage
-#    try :
-#        import Words
-#    except ImportError :
-#        from defaut import WordMorphism
-#    
-#except ImportError :
-#    from defaut import WordMorphism
-#    try :
-#         import numpy.matlib
-#         matrix = numpy.matlib.matrix
-#         identity_matrix = lambda n : numpy.matlib.eye(n, dtype=int)
-#     except ImportError :
-#         print "No Matrix support found"
-
+from defaut import WordMorphism
 import template
-# TODO
-#  try to import the words package... (which is now under developpement)
 
 SageObject = object
 
@@ -38,11 +43,12 @@ class NeighbourError(Exception) :
         return self.value
     
 
+class LabeledPermutation(SageObject) :
+    r"""
+    General template for labeled objects
 
-class Permutation(SageObject) :
-    """General template for labeled
-
-    ...NOT A USABLE TYPE... JUST HERE FOR INHERITANCE MECHANISM..."""
+    ...NOT FOR USAGE...
+    """
 
     def __init__(self, a) :
         self._intervals = [a[0][:], a[1][:]]
@@ -52,21 +58,112 @@ class Permutation(SageObject) :
 
 
     def __list__(self) :
+        r"""
+        the permutations as a list of two lists
+
+        EXAMPLES:
+        sage : p = GeneralizedPermutation('a b c', 'c b a')
+        sage : list(p)
+        [['a', 'b', 'c'], ['c', 'b', 'a']]
+
+        sage : p = GeneralizedPermutation('a b b', 'c c a')
+        sage : list(p)
+        [['a', 'b', 'c'], ['c', 'c', 'a']]
+
+        AUTHORS:
+            - Vincent Delecroix (2008-12-20)
+        """
         return [self._intervals[0][:], self._intervals[1][:]]
 
+
     def __eq__(self,other) :
+        r"""
+        Test of equality
+
+        Two labeled permutations are equal if they have the same intervals
+        numerotation.
+
+        EXAMPLES:
+            sage : p = GeneralizedPermutation('a b c', 'c b a')
+            sage : q = GeneralizedPermutation('p q r', 'r q p')
+            sage : p == q
+            False
+
+        AUTHORS:
+            - Vincent Delecroix (2008-12-20)
+        """
         return (self._intervals == other._intervals)
 
-    
+   
     def __ne__(self,other) :
+        r"""
+        Test of difference
+
+        AUTHORS:
+            - Vincent Delecroix (2008-12-20)
+        """
         return (self._intervals != other._intervals)
 
 
 
-class AbelianPermutation(Permutation, template.AbelianPermutation) :
-    """Class for labeled abelian permutation"""
+class AbelianPermutation(template.AbelianPermutation, LabeledPermutation) :
+    r"""
+    labeled Abelian permutation
+
+    EXAMPLES:
+        Reducibility testing :
+        sage : p = GeneralizedPermutation('a b c', 'c b a')
+        sage : p.is_reducible()
+        False
+
+        sage : q = GeneralizedPermutation('a b c d', 'b a d c')
+        sage : q.is_reducible()
+        True
+
+
+        Rauzy movability and Rauzy move :
+        sage : p = GeneralizedPermutation('a b c', 'c b a')
+        sage : p.is_rauzy_movable(0)
+        True
+        sage : p.rauzy_move(1)
+        sage : p
+        a b c
+        c a b
+        sage : p.is_rauzy_movable(0)
+        True
+        sage : p.rauzy_move(0)
+        sage : p
+        a b c
+        c b a
+
+
+        Rauzy diagrams
+        sage : p = GeneralizedPermutation('a b c', 'c b a')
+        sage : p.rauzy_diagram()
+         0 : ('a b c', 'c b a')  [1, 2]
+         1 : ('a b c', 'c a b')  [0, 1]
+         2 : ('a c b', 'c b a')  [2, 0]
+
+    AUTHORS:
+        - Vincent Delecroix (2008-12-20)
+    """
 
     def copy(self) :
+        r"""
+        Do a copy of the Abelian permutation.
+
+        EXAMPLES:
+            sage : p = GeneralizedPermutation('a b c', 'c b a')
+            sage : q = p.copy()
+            sage : p == q
+            True
+            sage : p.rauzy_move(0)
+            sage : p == q
+            False
+
+        AUTHORS:
+            - Vincent Delecroix (2008-12-20)
+        """
         p = AbelianPermutation(([],[]))
         p._twin[0].extend(self._twin[0])
         p._twin[1].extend(self._twin[1])
@@ -76,11 +173,23 @@ class AbelianPermutation(Permutation, template.AbelianPermutation) :
 
 
     def rauzy_move(self, winner) :
-        """do a Rauzy move for this choice of winner
+        r"""
+        Perform a Rauzy move on the labeled Abelian permutation with a given
+        choice of winner.
 
-        The Rauzy move of a permutation is the type of a special
-        induced on a sub-interval."""
+        INPUT:
+            a winner interval : it's must be 0 (for top) or 1 (for bottom)
 
+        EXAMPLES:
+            sage : p = GeneralizedPermutation('a b c','c b a')
+            sage : p.rauzy_move(0)
+            sage : print p
+            a b c
+            b c a
+
+        AUTHORS:
+            - Vincent Delecroix (2008-20-12)
+        """
         loser = 1 - winner
 
         i_win = self._twin[winner][-1]
@@ -91,10 +200,24 @@ class AbelianPermutation(Permutation, template.AbelianPermutation) :
 
 
     def rauzy_move_substitution(self, winner) :
-        """return a dictionnary on the alphabet of the
-        permutation with codage on the upper interval
+        r"""
+        Consider the operation done on the codage (a WordMorphism)
+        corresponding to a RauzyMove
+        
+        INPUT:
+            a winner interval : it's must be 0 (for top) or 1 (for bottom)
 
-        (It should be transformed to a WordMorphism)"""
+        OUTPUT:
+            a WordMorphism
+
+        EXAMPLES:
+            sage : p = GeneralizedPermutation('a b c', 'c b a')
+            sage : s0 = p.rauzy_move_substitution(0)
+            sage : p.rauzy_move(0)
+            sage : s1 = p.rauzy_move_substitution(1)
+            sage : p.rauzy_move(1)
+            sage : s = s0 * s1
+        """
 
         loser = 1 - winner
 
@@ -109,10 +232,22 @@ class AbelianPermutation(Permutation, template.AbelianPermutation) :
 
         
     def rauzy_diagram(self) :
-        """return the Rauzy diagram of this permutation
+        r"""
+        Create the Rauzy diagram associated with this permutation
 
-        The permutation must be irreducible, because of the
-        definability of the Rauzy induction."""
+        OUTPUT :
+            a RauzyDiagram
+
+        EXAMPLES :
+            sage : p = GeneralizedPermutation('a b c', 'c b a')
+            sage : d = p.rauzy_diagram()
+            sage : d
+            0 : ('a b c',' c b a')  [1, 2]
+            1 : ('a b c', 'c a b')  [0, 1]
+            2 : ('a c b', 'c b a')  [2, 0]
+
+        For more information, try help RauzyDiagram
+        """
         return AbelianRauzyDiagram(self)
 
 
@@ -120,10 +255,78 @@ class AbelianPermutation(Permutation, template.AbelianPermutation) :
 ##############    QUADRATIC LABELED PERMUTATIONS    #################
 #####################################################################
 
-class QuadraticPermutation(Permutation, template.QuadraticPermutation) :
-    """Class for generalized permutations without flip"""
+class QuadraticPermutation(template.QuadraticPermutation, LabeledPermutation) :
+    r"""
+    labeled quadratic (or generalized) permutation
+
+    EXAMPLES:
+        Reducibility testing :
+        sage : p = GeneralizedPermutation('a b b', 'c c a')
+        sage : p.is_reducible()
+        False
+
+        sage : p = GeneralizedPermutation('a b c a', 'b d d c')
+        sage : p.is_reducible()
+        True
+        sage : test, decomposition = p.is_reducible(return_decomposition = True)
+        sage : test
+        True
+        sage : decomposition
+        (['a'],['c','a'],[],['c'])
+
+    
+        Rauzy movavability and Rauzy move :
+        sage : p = GeneralizedPermutation('a b b', 'c c a')
+        sage : p.is_rauzy_movable(0)
+        True
+        sage : p.rauzy_move(0)
+        sage : p
+        a a b b
+        c c
+        sage : p.is_rauzy_movable(0)
+        False
+        sage : p.rauzy_move(1)
+        sage : p
+        a a b
+        b c c
+
+
+        Rauzy diagrams
+        sage : p = GeneralizedPermutation('a b b', 'c c a')
+        sage : p.rauzy_diagram()
+         0 : ('a b b', 'c c a')  [1, 0]
+         1 : ('a a b b', 'c c')  [-1, 2]
+         2 : ('a a b', 'b c c')  [2, 3]
+         3 : ('a a', 'b b c c')  [4, -1]
+         4 : ('c a a', 'b b c')  [5, 4]
+         5 : ('c c a a', 'b b')  [-1, 6]
+         6 : ('c c a', 'a b b')  [6, 7]
+         7 : ('c c', 'a a b b')  [8, -1]
+         8 : ('b c c', 'a a b')  [9, 8]
+         9 : ('b b c c', 'a a')  [-1, 10]
+        10 : ('b b c', 'c a a')  [10, 11]
+        11 : ('b b', 'c c a a')  [0, -1]
+
+    AUTHORS:
+        - Vincent Delecroix (2008-12-20)
+    """
 
     def copy(self) :
+        r"""
+        Do a copy of the Quadratic permutation.
+
+        EXAMPLES:
+            sage : p = GeneralizedPermutation('a b b', 'c c a')
+            sage : q = p.copy()
+            sage : p == q
+            True
+            sage : p.rauzy_move(0)
+            sage : p == q
+            False
+
+        AUTHORS:
+            - Vincent Delecroix (2008-20-12)
+        """
         p = QuadraticPermutation(([],[]))
         p._twin[0].extend(self._twin[0])
         p._twin[1].extend(self._twin[1])
@@ -133,6 +336,23 @@ class QuadraticPermutation(Permutation, template.QuadraticPermutation) :
        
 
     def rauzy_move(self,winner) :
+        r"""
+        Perform a Rauzy move of the quadratic permutation move with a given
+        choice of winner.
+
+        INPUT:
+            a winner interval : it's must be 0 (for top) or 1 (for bottom)
+
+        EXAMPLES:
+            sage : p = GeneralizedPermutation('a b b','c c a')
+            sage : p.rauzy_move(0)
+            sage : print p
+            a b c
+            b c a
+
+        AUTHORS:
+            - Vincent Delecroix (2008-20-12)
+        """
         loser = 1 - winner
 
         i_win = self._twin[winner][-1]
@@ -146,91 +366,115 @@ class QuadraticPermutation(Permutation, template.QuadraticPermutation) :
         self._twin_rauzy_move(winner)
 
     def rauzy_diagram(self) :
+        r"""
+        Create the Rauzy diagram associated with this permutation
+
+        OUTPUT:
+            a RauzyDiagram
+
+        EXAMPLES:
+            sage : p = GeneralizedPermutation('a b b', 'c c a')
+            sage : d = p.rauzy_diagram()
+
+        For more information, try help RauzyDiagram or help labeled.QuadraticPermutation
+        """
         return QuadraticRauzyDiagram(self)
+
 
 
 ##################################
 #####     RAUZY DIAGRAMS     #####
 ##################################
-# TODO
-#  - define a type Path which should be used to generate matrx or substitution or language or equations on lengths
-# from a rauzy diagram. A path is simply (p,type,type,type,...,type) or (p,(type,n1),(type,n2),...,(type,n))
-# it should be embeded in different diagrams but much of the method conern directly the diagrams :
-#   diagram.path_is_loop(self, path)
-#   diagram.path_composition(self, path, function, composition)
-#   diagram.path_is_complete(self, path)  # if each letter wins
-#
-#
-#
-#
-#
-#  - perform rauzy_move on real lengths
-#  - the alphabet must be set in an order one time for all (the order is only determine by the initial permutation)
-#  (use alphabetize and numerize to know it)
-#
 
-class Path(SageObject) :
-    def __init__(self, value=()) :
-        l = []
-        # syntax verification
-        if len(value) == 0 : raise TypeError("a path as a start")
-        if type(value[0]) != int : raise TypeError("the first element must be an integer")
-        l.append(value[0])
+class LabeledRauzyDiagram(SageObject) :
+    r"""
+    Template for Rauzy diagrams of labeled permutations
+    """
 
-        for i in value[1:] :
-            if type(i) == int  :
-               if (i != 0) and (i != 1) : raise TypeError("type must be 0 or 1")
-               l.append(i)
-            if type(i) == tuple :
-                if len(i) != 2 : raise TypeError("syntax problem")
-                if (type(i[0]) != int) or (type(i[1]) != int) : raise TypeError("syntax problem")
-                if (i[0] != 0) and (i[0] != 1) : raise TypeError("type must be 0 or 1")
-                l.extend([i[0]] * i[1])
-
-        print l
-        tuple.__init__(self, tuple(l))
-                
-                
-
-
-class RauzyDiagram(SageObject) :
-    """Class for Labeled Rauzy Diagram
-
-        ...DO NOT USE... """
     
-    # standard function for representation of the Rauzy Diagram
     def permutation_to_vertex(self, p) :
+        r"""
+        Translation of the a labeled permutation to a vertex
+
+        Vertex storage depends of the type of the permutation. Moreover this
+        storage function should be change in future version.
+
+        INPUT:
+            a labeled Permutation
+
+        OUTPUT:
+            a "vertex-typed" object (actually a 2-uple of strings)
+
+        AUTHORS:
+            - Vincent Delecroix (2008-12-20)
+        """     
         l = list(p)
         return (' '.join(l[0]),' '.join(l[1]))
 
-    def vertex_to_permutation(self, i) :
-        a0 = self._permutations[i][0].split()
-        a1 = self._permutations[i][1].split()
-        return AbelianPermutation([a0,a1])
-
-
-    def vertex_to_str_one_line(self, i) :
-        return str(self._permutations[i])
-
 
     def vertex_to_str(self, i) :
+        r"""
+        String for the representation of a vertex.
+
+        INPUT:
+            an indice of a vertex
+
+        OUTPUT:
+            a string
+
+        AUTHOR:
+            - Vincent Delecroix (2008-12-20)
+
+        """
         return self._permutations[i][0] + "\\n" + self._permutations[i][1]
 
 
+    def vertex_to_one_line_str(self, i) :
+        r"""
+        One line string for the representation of a vertex.
+
+        INPUT:
+            an indice of a vertex
+
+        OUTPUT:
+            a string
+
+        AUTHOR:
+            - Vincent Delecroix (2008-12-20)
+        """
+        return str(self._permutations[i])
+
+
     def edges_to_str(self, i) :
+        r"""
+        One line string for the representation of a couple of edges (the
+        0-neighbour and the 1-neighbour).
+
+        INPUT:
+            an indice of an edge
+
+        OUTPUT:
+            a string
+
+        AUTHOR:
+            - Vincent Delecroix (2008-12-20)
+        """
         return str(self._neighbours[i])
 
 
-    # Composition function on edges.
     def path_composition(self, path, function, composition = None) :
-        """compose an edge's function on a path
-        function must be of the form :
-          (i,type) -> element
+        r"""
+        Compose an edges function on a path
 
-        function(None) must be an identity element for initialization
-        and the path as a path...
+        INPUT:
+            function must be of the form (indice,type) -> element
+            Moreover function(None) must be an identity element for
+            initialization.
 
-        ! MUST TRY TO SEARCH LOOPS INSIDE THE PATH !
+        EXAMPLES:
+        
+        AUTHOR:
+            - Vincent Delecroix (2008-12-20)
         """
         if path == () : return function(None,None)
 
@@ -250,9 +494,9 @@ class RauzyDiagram(SageObject) :
             elif (type(step) == tuple) and (len(step) == 2) :
                 for j in range(step[1]) :
                     if composition == None :
-                        result = result * function(i,step)
+                        result = result * function(i, step)
                     else :
-                        result = composition(result, function(i,step[0]))
+                        result = composition(result, function(i, step[0]))
                     if self._neighbours[i][step] == -1 :
                         raise NeighbourError
                     i = self._neighbours[i][step[0]]
@@ -301,7 +545,8 @@ class RauzyDiagram(SageObject) :
 
 
     def path_to_substitution(self, *args) :
-        """the path must be of the form :
+        r"""
+        the path must be of the form :
         (i,type,type,type,...,type)
         or
         (i,(type,n1),(type,n2),...,(type,nk))
@@ -312,27 +557,98 @@ class RauzyDiagram(SageObject) :
         support a poweration with ** symbol"""
         
         return self.path_composition(args, self.edge_to_substitution)
-        
 
     def path_to_matrix(self, *args) :
-        """the path must be of the form :
-        (i,type,type,type,...,type)
-        or
-        (i,(type,n1),(type,n2),...,(type,nk))"""
-
         return self.path_composition(args, self.edge_to_matrix)
 
         
-class AbelianRauzyDiagram(RauzyDiagram, template.RauzyDiagram) :
+class AbelianRauzyDiagram(template.RauzyDiagram, LabeledRauzyDiagram) :
+    r"""
+    Labeled Rauzy diagram of abelian permutations.
+
+    EXAMPLES:
+        sage : d = RauzyDiagram('a b c', 'c b a')
+        sage : d
+         0 : ('a b c', 'c b a')  [1, 2]
+         1 : ('a b c', 'c a b')  [0, 1]
+         2 : ('a c b', 'c b a')  [2, 0]
+        
+    AUTHORS:
+        - Vincent Delecroix (2008-12-20)
+    """
+
+
     def first_vertex(self, p) :
+        r"""
+        A special intialization before the insertion of the first vertex.
+
+        INPUT:
+            a labeled.AbelianPermutation
+
+        AUTHOR:
+            - Vincent Delecroix (2008-12-20)
+        """
         self._alphabet = p[0][:]
         self.numerize = lambda l : self._alphabet.index(l)
         self.alphabetize = lambda i : self._alphabet[i]
 
+    def vertex_to_permutation(self, i) :
+        r"""
+        Translation of a vertex indice to a permutation.
+
+        This function invert the permutation_to_vertex function.
+
+        INPUT:
+            an indice of a vertex
+
+        OUTPUT:
+            a labeled Permutation
+
+        AUTHOR:
+            - Vincent Delecroix (2008-12-20)
+        """
+        a0 = self._permutations[i][0].split()
+        a1 = self._permutations[i][1].split()
+        return AbelianPermutation([a0,a1])
 
 
-class QuadraticRauzyDiagram(RauzyDiagram, template.RauzyDiagram) :
+
+
+class QuadraticRauzyDiagram(template.RauzyDiagram, LabeledRauzyDiagram) :
+    r"""
+    Labeled Rauzy diagram of quadratic permutations.
+
+    EXAMPLES:
+        sage : d = RauzyDiagram('a b b', 'c b a')
+        sage : d
+         0 : ('a b b', 'c c a')  [1, 0]
+         1 : ('a a b b', 'c c')  [-1, 2]
+         2 : ('a a b', 'b c c')  [2, 3]
+         3 : ('a a', 'b b c c')  [4, -1]
+         4 : ('c a a', 'b b c')  [5, 4]
+         5 : ('c c a a', 'b b')  [-1, 6]
+         6 : ('c c a', 'a b b')  [6, 7]
+         7 : ('c c', 'a a b b')  [8, -1]
+         8 : ('b c c', 'a a b')  [9, 8]
+         9 : ('b b c c', 'a a')  [-1, 10]
+        10 : ('b b c', 'c a a')  [10, 11]
+        11 : ('b b', 'c c a a')  [0, -1]
+        
+    AUTHORS:
+        - Vincent Delecroix (2008-12-20)
+    """
+
+
     def first_vertex(self, p) :
+        r"""
+        A special intialization before the insertion of the first vertex.
+
+        INPUT:
+            a labeled.QuadraticPermutation
+
+        AUTHOR:
+            - Vincent Delecroix (2008-12-20)
+        """
         tmp_alphabet = []
         for letter in p[0]+p[1] :
             if letter not in tmp_alphabet : tmp_alphabet.append(letter)
@@ -341,3 +657,22 @@ class QuadraticRauzyDiagram(RauzyDiagram, template.RauzyDiagram) :
         self.numerize = lambda l : self._alphabet.index(i)
         self.alphabetize = lambda i : self._alphabet[i]
 
+
+    def vertex_to_permutation(self, i) :
+        r"""
+        Translation of a vertex indice to a permutation.
+
+        This function invert the permutation_to_vertex function.
+
+        INPUT:
+            an indice of a vertex
+
+        OUTPUT:
+            a labeled.QuadraticPermutation
+
+        AUTHOR:
+            - Vincent Delecroix (2008-12-20)
+        """
+        a0 = self._permutations[i][0].split()
+        a1 = self._permutations[i][1].split()
+        return QuadraticPermutation([a0,a1])

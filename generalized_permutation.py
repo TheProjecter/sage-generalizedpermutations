@@ -1,23 +1,21 @@
 r"""
-(Flipped) Generalized (Reduced or Labeled) Permutation software
+(Flipped) Generalized (Reduced or Labeled) Permutation and associated Rauzy
+diagrams.
 
-
-   This library is designed to define and use different types of
-   permutations and generalized permutations which appears in interval
-   exchange transformations or linear involutions (with or without
-   flips). The module also provide works with Rauzy Diagram.
-
+   This library is designed to define and use different types of permutations
+   and generalized permutations which appears in interval exchange
+   transformations and linear involutions (with or without flips). The module
+   also provide special tools to work with Rauzy diagrams.
 
 
 AUTHORS: 
     -- Vincent Delecroix (2008-12-20): initial version
 
 
-   To create all types of permutation there is a general class factory
-   whose name is GeneralizedPermutation :
+   To create all types of permutation there is a general class factory whose
+   name is GeneralizedPermutation :
 
-   For labeled permutation :
-   Creation of labeled abelian and quadratic permutation :
+   Creation of labeled Abelian and quadratic permutation :
        sage : p1 =  GeneralizedPermutation('a b c', 'c b a')
        a b c
        c b a
@@ -25,33 +23,31 @@ AUTHORS:
        a a b
        b c c
        
-   Creation of reduced abelian and quadratic permutation :
-       sage : p1 = GeneralizedPermutation('a b c', 'c b a', reduced=True)
+   Creation of reduced Abelian and quadratic permutation :
+       sage : p1 = GeneralizedPermutation('a b c', 'c b a', reduced = True)
        a b c
        c b a
-       sage : p2 = GeneralizedPermutation('a b b', 'c c a', reduced=True)
+       sage : p2 = GeneralizedPermutation('a b b', 'c c a', reduced = True)
        a b b
        c c a
 
    For flips you just have to precise the set of flipped intervals :
-       sage : p1 = GeneralizedPermutation('a b c', 'c b a', flips=['a','c'])
+       sage : p1 = GeneralizedPermutation('a b c', 'c b a', flips = ['a','c'])
        -a b -c
        -c b -a
-       sage : p2 = GeneralizedPermutation('a a b', 'b c c', flips=['a'], reduced=True)
-       -a -a b
-       b c c
+       sage : p2 = GeneralizedPermutation('a a b', 'b c c', flips = ['a'],
+       reduced = True)
+       -a -a  b
+        b  c  c
 
 
-   Remark :
-     - flips are not yet implemented
-   
-
-   For Rauzy diagrams there is two methods. The first one is to use the class
-   factory :
+   For Rauzy diagrams there is two construction methods. The first one is to
+   use the class factory :
        sage : d = RauzyDiagram('a b c', 'c b a')
        0 : ('a b c', 'c b a')  [1,2]
        1 : ('a b c', 'c a b')  [0,1]
        2 : ('a c b',' c b a')  [2,0]
+
    The other one is to use the method of a generalized permutation :
        sage : p = GeneralizedPermutation('a b c', 'c b a')
        sage : d = p.rauzy_diagram()
@@ -59,9 +55,7 @@ AUTHORS:
        1 : ('a b c', 'c a b')  [0,1]
        2 : ('a c b',' c b a')  [2,0]
        
-
    Both methods give rise to the same object.
-
 """
 
 #*****************************************************************************
@@ -102,32 +96,65 @@ class NoMatchingTwin(Exception):
 
 def GeneralizedPermutation(*args,**kargs):
     r"""
-    Class factory for Generalized Permutation objects
+    Class factory for Generalized Permutation
 
     INPUT :
-        arguments must be in one of the following forms :
+         arguments must be in one of the following forms :
           - two strings (names of intervals)
           - a list of two strings (idem)
           - two lists (names of intervals)
           - a list of two lists (idem)
-          - one string of the form (names of intervals in 0) \n (names of intervals in 1)
+          - one string with form (top intervals) \\n (bottom intervals)
 
-       Special arguments are specified with the argument=value syntax :
+         Special arguments are specified with the argument=value syntax :
           - to specify flips : flips = list_of_letters
           - to specify reduction : reduced = True (False is the defaut)
 
     OUTPUT :
-       a generalized permutation (eight possible types)
+        a generalized permutation (eight possible types)
 
     EXAMPLES :
-       sage : p = GeneralizedPermutation('a b c d','d c b a')
+        sage : p = GeneralizedPermutation('a b c d','d c b a')
+        sage : q = GeneralizedPermutation([['a','b','c','d'],['d','c','b','a']])
+        sage : p == q
+        True
+        sage : p
+        a b c d
+        d c b a
+        sage : p.is_reducible()
+        False
+        sage : p.rauzy_move(0)
+        a b c d
+        d a c b
+        sage : d = p.rauzy_diagram()
+        sage : d.dot()   # output a dot file on screen which should be used to
+        generate pictures
+       
 
-
-    NOTES
+    NOTES :
+        flipped permutations are not yet implemented
 
 
     REFERENCES :
+        Corentin Boissy and Erwan Lanneau, "Dynamics and geometry
+        of the Rauzy-Veech induction for quadratic differentials"
+        (arxiv:0710.5614)
 
+        Claude Danthony and Arnaldo Nogueira "Measured foliations
+        on nonorientable surfaces", Annales scientifiques de
+        l'Ecole Normale Superieure, Ser. 4, 23, no. 3 (1990),
+        p 469-494
+
+        Arnaldo Nogueira, "Almost all Interval Exchange
+        Transformations with Flips are Nonergodic" (Ergod. Th. &
+        Dyn. Systems, Vol 5., (1985), 257-271
+
+        Anton Zorich, "Generalized Permutation software"
+        (http://perso.univ-rennes1.fr/anton.zorich)
+
+        Anton Zorich, "Explicit Jenkins-Strebel representatives of
+        all strata of Abelian and quadratic differentials", Journal
+        of Modern Dynamics, 2:1 (2008), 139-185
 
     AUTHORS :
       - Vincent Delecroix (2008-20-12)
@@ -238,11 +265,9 @@ def GeneralizedPermutation(*args,**kargs):
                 return labeled.AbelianPermutation(a)
         else :
             if reduction == True :
-                print "flipped reduced abelian"
-                # return reduced.FlippedAbelianPermutation(a,flips)
+                return reduced.FlippedAbelianPermutation(a,flips)
             else :
-                print "flipped labeled abelian"
-                # return labeled.FlippedAbelianPermutation(a,flips)
+                return labeled.FlippedAbelianPermutation(a,flips)
             return None
     else :
         if flips == [] :
@@ -252,18 +277,60 @@ def GeneralizedPermutation(*args,**kargs):
                 return labeled.QuadraticPermutation(a)
         else :
             if reduction == True :
-                print "flipped reduced quadratic"
-                # return reduced.FlippedQuadraticPermutation(a,flips)
+                return reduced.FlippedQuadraticPermutation(a,flips)
             else :
-                print "flipped labeled quadratic"
-                # return labeled.FlippedQuadraticPermutation(a,flips)
+                return labeled.FlippedQuadraticPermutation(a,flips)
 
 
 
 def RauzyDiagram(*args, **kargs) :
     r"""
-    Class factory for Rauzy Diagram
+    Class factory for Rauzy Diagrams
 
+    INPUT :
+         exactly the same as GeneralizedPermutation
+    
+    OUTPUT :
+        a rauzy_diagram (eight possible types)
+
+    EXAMPLES :
+        sage : d = RauzyDiagram('a b c','c b a')
+        sage : d
+        0 : ('a b c', 'c b a')  [1,2]
+        1 : ('a b c', 'c a b')  [0,1]
+        2 : ('a c b', 'c b a')  [2,0]
+
+        Each line of the representation of RauzyDiagrams correspond to :
+        'internal number' : 'permutation' ['0-neighbour', '1-neighbour']
+              
+
+    NOTES :
+        flipped permutations are not yet implemented
+
+
+    REFERENCES :
+        Corentin Boissy and Erwan Lanneau, "Dynamics and geometry
+        of the Rauzy-Veech induction for quadratic differentials"
+        (arxiv:0710.5614)
+
+        Claude Danthony and Arnaldo Nogueira "Measured foliations
+        on nonorientable surfaces", Annales scientifiques de
+        l'Ecole Normale Superieure, Ser. 4, 23, no. 3 (1990),
+        p 469-494
+
+        Arnaldo Nogueira, "Almost all Interval Exchange
+        Transformations with Flips are Nonergodic" (Ergod. Th. &
+        Dyn. Systems, Vol 5., (1985), 257-271
+
+        Anton Zorich, "Generalized Permutation software"
+        (http://perso.univ-rennes1.fr/anton.zorich)
+
+        Anton Zorich, "Explicit Jenkins-Strebel representatives of
+        all strata of Abelian and quadratic differentials", Journal
+        of Modern Dynamics, 2:1 (2008), 139-185
+
+    AUTHORS :
+      - Vincent Delecroix (2008-20-12)
 
     """
 

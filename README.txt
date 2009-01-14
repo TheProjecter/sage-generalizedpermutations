@@ -5,7 +5,7 @@ word combinatorics) and more generally in the theory measured
 foliations of surfaces.
 
 For now, the project is pure python and doesn't need SAGE. At term,
-it will need some features of Matrix, Words and Graph.
+it will need some features of Matrix, Words, Permutation and Graph.
 
 The main file is generalized_permutation.py, so for usage just do :
 
