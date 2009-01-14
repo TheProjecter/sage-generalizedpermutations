@@ -1,0 +1,15 @@
+* document everything, construction of exemples
+
+* flipped permutations
+
+* computation of strata (for oriented permutations)
+
+* correspondance cc of strata <-> Rauzy diagrams (from Zorich works)
+    - computation of spin
+    - explicit permutations of strata
+
+* implement a better way to consider Path in Rauzy diagrams
+
+* enumeration of dynamically/geometrically irreducible permutations
+
+* consider length and induction on length
