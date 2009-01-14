@@ -1,15 +1,36 @@
-* document everything, construction of exemples
+A list of thing to do in order (or not)
+
+
+* modify the order of execution of is_reducible for quadratic differentials. Find better examples to test
+
+
+* merge the pythonic version into SAGE :
+   - consider SageObject  (in particuliar the special __latex__ method)
+   - usage of WordMorphism
+   - usage of native Alphabet for labelization
+   - usage of Matrix
+   - RauzyDiagram as a child of Graph
+
+
+* better documentation including references, construction of more examples
+
+
+* implement a better and more systematic way to consider Path in Rauzy diagrams (using iterator for example)
+
 
 * flipped permutations
 
+
 * computation of strata (for oriented permutations)
 
+
 * correspondance cc of strata <-> Rauzy diagrams (from Zorich works)
+    - create a objects for strata
     - computation of spin
     - explicit permutations of strata
 
-* implement a better way to consider Path in Rauzy diagrams
 
 * enumeration of dynamically/geometrically irreducible permutations
 
-* consider length and induction on length
+
+* consider lengths and induction on lengths (Rauzy moves) and corresponding path in Rauzy diagrams

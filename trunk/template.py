@@ -1,55 +1,10 @@
-"""General template for different types of permutation
-and rauzy_diagram
+r"""
+General template for different types of generalized permutations and Rauzy diagrams
 
 
 Here is the main file concerning the storage of general permutations. It's useful
 for each of the type reduced or labeled. Because it's almost the same thing. Almost
 every method here start with the special word 'twin'.
-
-list of general method :
-  __repr__
-  __len__
-  __getitem__
-  length_top
-  length_bottom
-  length
-
-
-list of general abelian/quadratic and flipped/oriented method :
-  _init_twin
-  _twin_rauzy_move
-  is_reducible
-  is_rauzy_movable
-  strata
-  gender
-
-
-list of labeled general method :
-  __init__
-  __eq__
-  __ne__
-  __list__
-  rauzy_move_matrix
-
-
-list of labeled specialized method (i.e. depends of the type) :
-  rauzy_move_substitution
-
-
-
-list of reduced general method :
-  __init__
-  get_alphabet, set_alphabet
-  set_alphabetize
-  rauzy_move (= _twin_rauzy_move)
-
-
-list of reduced specialized method (i.e. depends of the type) :
-  __eq__
-  __ne__
-  __list__
-  _init_alphabet
-  copy
 
 """
 
@@ -65,24 +20,11 @@ def is_simple(s) :
     return True
 
 
-def is_double_set(s) :
-    """s must be a list. Return true if each element is repeated exactly twice """
 
-    t = s[:]
-    while t != [] :
-        if t.count(t[0]) != 2 : return False
-        i = t[1:].index(t[0])
-        t.pop(0)
-        t.pop(i)
-
-    return True
-
-
-
-class Permutation(SageObject) :
-    """General template for all types
-
-    ...NOT A USABLE TYPE... JUST HERE FOR INHERITANCE MECHANISM..."""
+class GeneralizedPermutation(SageObject) :
+    r"""
+    General template for all types
+    """
 
     def __repr__(self) :
         l = list(self)
@@ -92,15 +34,93 @@ class Permutation(SageObject) :
         return (len(self._twin[0]) + len(self._twin[1])) / 2
 
     def length_top(self) :
+        r"""
+        return the number of intervals in the top segment
+
+        OUTPUT:
+            an integer
+
+        EXAMPLES:
+            sage : p = GeneralizedPermutation('a b c d', 'c a d b')
+            sage : p.lenght_top()
+            4
+
+            sage : p = GeneralizedPermutation('a b c b c d d', 'e e a')
+            p.length_top()
+            7
+
+        AUTHORS:
+            - Vincent Delecroix (2008-12-20)
+        """
         return len(self._twin[0])
 
     def length_bottom(self) :
+        r"""
+        return the number of intervals in the bottom segment
+
+        OUTPUT:
+            an integer
+
+        EXAMPLES:
+            sage : p = GeneralizedPermutation('a b c d', 'c a d b')
+            sage : p.length_bottom()
+            4
+
+            sage : p = GeneralizedPermutation('a b c b c d d','e e a')
+            sage : p.length_bottom()
+            3
+        """
         return len(self._twin[1])
 
     def length(self) :
+        r"""
+        return a 2-uple of lengths
+
+        p.length() is identical to (p.length_top(), p.length_bottom())
+
+        OUTPUT:
+            a 2-uple of integers
+
+        EXAMPLES :
+            sage : p = GeneralizedPermutation('a b c d', 'c a d b')
+            sage : p.length()
+            (4,4)
+
+            sage : p = GeneralizedPermutation('a b c b c d d','e e a')
+            sage : p.length()
+            (7,3)
+
+        """
         return len(self._twin[0]),len(self._twin[1])
 
+
     def __getitem__(self,i) :
+        r"""
+        Get the label of a specified interval
+
+        INPUT:
+            integer : 0 or 1
+            2-uple of integer and slice : 0,1 and a slice between 0 and
+            length_top() (if 0) and between 0 and length_bottom() (if 1)
+            2-uple of integers : 0,1 and the other between 0 and length_top()
+            (if 0) and between 1 and length_bottom() (if 1)
+
+        EXAMPLES:
+            sage : p = GeneralizedPermutation('a b c d', 'd c b a')
+            sage : p[0]
+            ['a', 'b', 'c', 'd']
+            sage : p[1]
+            ['d', 'c', 'b', 'a']
+            sage : p[0][2:]
+            ['c', 'd']
+            sage : p[0][-1]
+            ['d']
+            sage : p[1][-1]
+            ['a']
+
+        AUTHORS:
+            - Vincent Delecroix (2008-12-20)
+        """
         s = self.__list__()
         if type(i) == int :
             if i == 0 : return s[0]
@@ -111,14 +131,19 @@ class Permutation(SageObject) :
             return s[i[0]][i[1]]
 
 
-class AbelianPermutation(Permutation) :
-    """General template for AbelianPermutation
 
-    ...NOT A USABLE TYPE... JUST HERE FOR INHERITANCE MECHANISM..."""
+class AbelianPermutation(GeneralizedPermutation) :
+    r"""
+    General template for AbelianPermutation
+
+    ...DO NOT USE...
+
+    AUTHORS:
+        - Vincent Delecroix (2008-12-20)
+    """
 
 
     def _init_twin(self,a):
-        """initialisation of correspondance from the list in a"""
         self._twin = [a[0][:],a[1][:]]
         for i in range(len(self._twin[0])) :
             c = self._twin[0][i]
@@ -128,10 +153,12 @@ class AbelianPermutation(Permutation) :
 
 
     def _twin_rauzy_move(self, winner) :
-        """do a Rauzy move for this choice of winner
+        r"""
+        do a Rauzy move (only on the twin_list) for this choice of winner.
 
-        The Rauzy move of a permutation is the type of a special
-        induced on a sub-interval."""
+        AUTHORS:
+            - Vincent Delecroix (2008-12-20)
+        """
 
         loser = 1 - winner
 
@@ -148,39 +175,119 @@ class AbelianPermutation(Permutation) :
             self._twin[winner][self._twin[loser][j]] += 1
 
 
-    def is_reducible(self) :
-        """test of reducibility
+    def is_reducible(self, return_decomposition=False) :
+        r"""
+        Test of reducibility
 
         An abelian permutation p = (p0,p1) is reducible if
-        the set(p0[:i]) = set(p1[:i]) for an i < len(p0) """
+        the set(p0[:i]) = set(p1[:i]) for an i < len(p0)
+
+        OUTPUT:
+            a boolean
+            
+        EXAMPLE:
+            sage : p = GeneralizedPermutation('a b c', 'c b a')
+            sage : p.is_reducible()
+            False
+
+            sage : p = GeneralizedPermutation('a b c', 'b a c')
+            sage : p.is_reducible()
+            True
+        """
         s0, s1 = 0, 0
         for i in range(len(self)-1) :
             s0 += i
             s1 += self._twin[0][i]
-            if s0 == s1 : return True
+            if s0 == s1 :
+                if return_decomposition :
+                    return True, (self[0][:i+1], self[0][i+1:], self[1][:i+1], self[1][i+1:])
+                return True
+        if return_decomposition :
+            return False, None
         return False
 
 
-    def is_rauzy_movable(self, winner) :
-        """Return True if it's possible to perform a Rauzy move with this winner"""
+    def is_rauzy_movable(self, winner=0) :
+        r"""
+        Test of Rauzy movability (with an eventual specified choice of winner)
+
+        An abelian permutation as rauzy_movable with 0 and 1 type
+        simultaneously. But, for compatibility with quadratic permutations, a
+        winner could be specified.
+
+        A Rauzy move can be performed on an abelian permutation if and only the
+        two extremities intervals don't have the same label.
+
+        INPUT:
+            eventually a winner : 0 or 1
+
+        OUTPUT:
+            a boolean
+
+        EXAMPLES:
+            sage : p = GeneralizedPermutation('a b c', 'c b a')
+            sage : p.is_reducible()
+            False
+            sage : p = GeneralizedPermutation('a b c', 'b a c')
+            sage : p.is_reducible()
+            True
+
+        AUTHORS:
+            - Vincent Delecroix (2008-12-20)
+        """
         return self._twin[winner][-1] != len(self._twin[winner]) - 1
 
 
     def strata(self) :
-        """Return the strata (i.e. indices of singularities of the suspension)"""
-        raise NotImplemented
+        r"""
+        Return the strata corresponding to any suspension of the corresponding
+        IET.
 
+        The permutation must be irreducible. (? could consider product of strata ?)
+
+        OUTPUT:
+            an AbelianStrata object
+
+        EXAMPLES:
+            sage : p = GeneralizedPermutation('a b c', 'c b a')
+            sage : p.strata()
+
+        REFERENCES
+            Zorich
+
+        AUTHORS:
+            - Vincent Delecroix (2008-12-20)
+        """
+        return 'H'
 
     def gender(self) :
-        """Return the gender of the suspension"""
-        raise NotImplemented
+        r"""
+        Return the gender corresponding to any suspension of the corresponding
+        IET.
+
+        OUTPUT:
+            an integer
+
+        EXAMLES:
+            sage : p = GeneralizedPermutation('a b c', 'c b a')
+            sage : p.gender()
+            1
+
+        REFERENCES:
+            Veech
+
+        AUTHORS:
+            - Vincent Delecroix (2008-12-20)
+        """
         
     
-    
-class QuadraticPermutation(Permutation) :
-    """General template for QuadraticPermutation
+   
+class QuadraticPermutation(GeneralizedPermutation) :
+    r"""
+    General template for QuadraticPermutation
 
-    ...NOT A USABLE TYPE... JUST HERE FOR INHERITANCE MECHANISM..."""
+    ...DO NOT USE...
+    """
 
 
     def _init_twin(self,a):
@@ -206,58 +313,89 @@ class QuadraticPermutation(Permutation) :
 
 
     def is_reducible(self, return_decomposition=False) :
-        """return True if the permutation is geometrically reducible (Boissy-Lanneau)
+        r"""
+        Test of reducibility
 
-        i.e. there no decomposition as
-        A1 u B1 | ... | B1 u A2
-        A1 u B2 | ... | B2 u A2
+        A quadratic (or generalized) permutation is reducible if there exist a
+        decomposition
+            A1 u B1 | ... | B1 u A2
+            A1 u B2 | ... | B2 u A2
         where no corners is empty, or exactly one corner is empty
         and it is on the left, or two and they are both on the
         right or on the left.
 
-        if return_decomposition is set as True it return a 2-uple
+        INPUT:
+            you can eventually set return_decomposition to True
+
+        OUTPUT:
+            an integer
+            or
+            an integer and a tuple
+            if return_decomposition is set as True it return a 2-uple
         (test,decomposition) where test is the preceding test and
         decomposition is a 4-uple (A11,A12,A21,A22) where :
         A11 = A1 u BA
         A12 = B1 u A2
         A21 = A1 u B2
-        A22 = B2 u A2"""
+        A22 = B2 u A2
 
-        # the loops could be reduced using special properties such that :
-        #    - crossed twin (A11 and A22) or (A12 and A21)
-        
+        REFERENCES:
+            Boissy-Lanneau
+
+        AUTHORS:
+            - Vincent Delecroix (2008-12-20)
+        """
         l0 = self.length_top()
         l1 = self.length_bottom()
         s = list(self)
 
         # testing no corner empty eventually one or two on the left
+        A11, A12, A21, A22 = [], [], [], []
         for i1 in range(0, l0) :
+            if (i1 > 0) and (s[0][i1-1] in A11) :
+                A11 = []
+                break
             A11 = s[0][:i1]
-            if not is_simple(A11) : break
-            
+
             for i2 in range(l0 - 1, i1 - 1, -1) :
+                if s[0][i2] in A12 :
+                    A12 = []
+                    break
                 A12 = s[0][i2:]
-                if not is_simple(A12) : break
-                
+
+              
                 for i3 in range(0, l1) :
+                    if (i3 > 0) and (s[1][i3-1] in A21) :
+                        A21 = []
+                        break
                     A21 = s[1][:i3]
-                    if not is_simple(A21) : break
+
                     
                     for i4 in range(l1 - 1, i3 - 1, -1) :
+                        if s[1][i4] in A22 :
+                            A22 = []
+                            break
                         A22 = s[1][i4:]
-                        if not is_simple(A22) : break
+    
 
                         if sorted(A11 + A22) == sorted(A12 + A21) :
                             if return_decomposition :
                                 return True, (A11,A12,A21,A22)
                             return True
-        
+
+                    else : A22 = []
+                else : A21 = []
+            else : A12 = []
+        else : A11 = []        
+
+
         # testing two corners empty on the right (i2 = i4 = 0)
         A12, A22 = [], []
 
         for i1 in range(1, l0) :
-            A11 = s[0][:i1]
             if not is_simple(A11) : break
+            A11 = s[0][:i1]
+
             
             for i3 in range(0, l1) :
                 A21 = s[1][:i3]
@@ -274,10 +412,6 @@ class QuadraticPermutation(Permutation) :
 
 
     def is_rauzy_movable(self,winner) :
-        """test of possibility of a Rauzy move with this winner.
-
-        The possibility of a Rauzy move depends just of the length
-        equation."""
         loser = 1 - winner
         
         # the same letter at the right-end (False)
@@ -295,8 +429,6 @@ class QuadraticPermutation(Permutation) :
         
 
     def _twin_rauzy_move(self,winner) :
-        """perform the rauzy move on the permutation with the specified winner"""
-        
         loser = 1 - winner
 
         i_win = self._twin[winner][-1] # position of the winner twin
@@ -318,14 +450,15 @@ class QuadraticPermutation(Permutation) :
 
         del self._twin[loser][-1]
 
+
 ###################
 ##### FLIPPED #####
 ###################
-class FlippedAbelianPermutation(Permutation) :
+class FlippedAbelianPermutation(GeneralizedPermutation) :
     """Everything concerning the twin list is here"""
     pass
 
-class FlippedQuadraticPermutation(Permutation) :
+class FlippedQuadraticPermutation(GeneralizedPermutation) :
     """Everything concerning the twin list is here"""
     pass
 
@@ -333,56 +466,62 @@ class FlippedQuadraticPermutation(Permutation) :
 ##############################
 ##      RAUZY DIAGRAMS      ##
 ##############################
-"""
 
-general methods of rauzy diagrams
-  __init__
-  dot()
-  add_vertex(p)
+class Path(SageObject) :
+    r"""
+    Class for path in Rauzy Diagram
 
+    It provide a special iterator for computation.
+    """
+    def __init__(self, value = (), parent = None) :
+        l = []
+        # syntax verification
+        if len(value) == 0 : raise TypeError("a path as a start")
+        if type(value[0]) != int : raise TypeError("the first element must be an integer")
+        l.append(value[0])
 
-specialized methods of Abelian Rauzy diagram / Quadratic Rauzy Diagram / Flipped
-  vertex_to_permutation
-    translation from vertex type to the permutation type
-  vertex_to_string
-    translation from vertex type to a string
-  permutation_to_vertex
-    translation from permutation to vertex type
+        for i in value[1:] :
+            if type(i) == int  :
+               if (i != 0) and (i != 1) : raise TypeError("type must be 0 or 1")
+               l.append(i)
+            if type(i) == tuple :
+                if len(i) != 2 : raise TypeError("syntax problem")
+                if (type(i[0]) != int) or (type(i[1]) != int) : raise TypeError("syntax problem")
+                if (i[0] != 0) and (i[0] != 1) : raise TypeError("type must be 0 or 1")
+                l.extend([i[0]] * i[1])
 
-
-Abelian oriented :
-   complete_loop
-   complete_diagram
-
-
-general methods of Labeled Diagram
-  alphabetize
-  add_edge
-
-general methods of Reduced Diagram
-  add_edge
-
-"""
+        tuple.__init__(self, tuple(l))
 
 
 class RauzyDiagram(SageObject) :
-    """General template
+    r"""
+    General template for Rauzy Diagram
 
-    ...DO NOT USE..."""
-    
+    ...DO NOT USE...
+    """
     def __init__(self, p) :
+        r"""
+        Constructor of general Rauzy Diagram
+        """
         self._permutations = [p.copy()]
         self._neighbours = [[None,None]]
 
-        # complete the list
         self.complete()
 
-        # store just essential data
         self.first_vertex(self._permutations[0])
         self._permutations = map(self.permutation_to_vertex, self._permutations)
 
 
     def __repr__(self) :
+        r"""
+        Representation of general Rauzy Diagram
+
+        Just use the functions vertex_to_one_line_str and edge_to_str that
+        must be defined for each child.
+
+        AUTHORS:
+            -Vincent Delecroix (2008-12-20)
+        """
         s = ""
         for i in range(len(self._permutations)-1) :
             s += "%3d : " %(i) + self.vertex_to_str_one_line(i) + "  " + self.edges_to_str(i) + "\n"
@@ -392,36 +531,45 @@ class RauzyDiagram(SageObject) :
 
 
     def __getitem__(self,i) :
+        r"""
+        Translate the vertex to storage to permutation
+
+        Just use the function vertex_to_permutation that must be defined
+        in each child.
+
+        AUTHORS:
+            - Vincent Delecroix (2008-12-20)
+        """
         if type(i) != int :
             raise TypeError("must be an integer")
         return self.vertex_to_permutation(i)
 
 
     def __len__(self) :
+        r"""
+        Number of vertex
+
+        OUTPUT:
+            an integer
+
+        AUTHORS:
+            - Vincent Delecroix
+        """
         return len(self._permutations)
-
-    def permutation_to_vertex(self, p) :
-        pass
-
-
-    def vertex_to_permutation(self, i) :
-        pass
-
-
-    def vertex_to_str(self, i) :
-        str(p)
-    
-
-    def vertex_to_str_one_line(self, i) :
-        raise NotImplemented
-
-
-    def first_vertex(self, p) :
-        pass
 
 
     def complete(self) :
-        """total completion of the diagram from i"""
+        r"""
+        Completion of the Rauzy diagram.
+
+        A Rauzy diagram is the reunion of all permutations that could be
+        obtained with successive rauzy moves. This function just use the
+        functions __getitem__ and is_rauzy_movable and rauzy_move which must
+        be defined for child and their corresponding permutation types.
+
+        AUTHORS:
+            - Vincent Delecroix (2008-12-20)
+        """
         i = 0
         N = len(self._permutations)
 
@@ -441,8 +589,18 @@ class RauzyDiagram(SageObject) :
             N = len(self._permutations)
 
 
-    def add_vertex(self,p) :
-        """add a vertex or return the current index"""
+    def add_vertex(self, p) :
+        r"""
+        Add a vertex if it's not yet in and return the corresponding index
+
+        (perhaps a try...except is less performant than a count)
+
+        INPUT:
+            A permutations
+
+        AUTHORS:
+            - Vincent Delecroix (2008-20-12)
+        """
         try :
             return self._permutations.index(p)
 
@@ -456,16 +614,61 @@ class RauzyDiagram(SageObject) :
             edge0_label = "", edge0_style = "dotted",
             edge1_label = "", edge1_style = "bold",
             opt=['overlap="scale"']) :
-        """print a dot graph string (which should be used to produce a jpg, bitmap or pdf...)
-        The options should take the form :
-        edge0_label = "0"
-        edge0_style = "bold" || "dotted" || "dashed"
-        idem for 1
+        r"""
+        Return a dot graph string
+
+        a dot file is simply a formated text file containg a graph. Some
+        software uses this format to compute graph pictures. This function
+        treats the translation from Rauzy diagram to dot file.
+        
+        INPUT:
+            there is a lot of options that should be parametrized, but most of
+            the time, nothing is a good solution. x means here 0 or 1.
+            * edgex_label : A label that will be print over each edge
+            * edgex_style : one between "bold" , "dotted" and "dashed" (defaut
+            is dotted)
+
+            TODO :
+            * winner_letter_on_edge : a boolean (defaut is False)
+            * loser_letter_on_edge : a boolean (defaut is False)
+
+        OUTPUT:
+            a string
+
+        EXAMPLES:
+            sage : d = RauzyDiagram('a b c', 'c b a')
+            sage : print d.dot()
+            digraph G {
+            	overlap="scale";
+            	/* nodes */
+            	node [];
+            	0 [label = "a b c\nc b a"];
+            	1 [label = "a b c\nc a b"];
+            	2 [label = "a c b\nc b a"];
+            
+            	/* edges of type 0 */
+            	edge [style = dotted];
+            	0->1;
+            	1->0;
+            	2->2;
+            
+            	/* edges of type 1 */
+            	edge [style = bold];
+            	0->2;
+            	1->1;
+            	2->0;
+            }
+            
+
+        AUTHORS:
+            - Vincent Delecroix
         """
-        print "digraph G {"
+        s = ""
+        
+        s += "digraph G {\n"
 
         for c in opt:
-            print "\t"+c+";"
+            s += "\t"+c+";"
 
         # initialization of node and edges properties
         node_properties = "";
@@ -479,28 +682,30 @@ class RauzyDiagram(SageObject) :
 
 
         # creation of nodes
-        print "\n\t/* nodes */"
-        print "\tnode [%s];" %(node_properties)
+        s += "\n\t/* nodes */\n"
+        s += "\tnode [%s];\n" %(node_properties)
 
         for k in range(len(self._permutations)) :
-            print """\t%d [label = "%s"]""" %(k, self.vertex_to_str(k))
+            s += """\t%d [label = "%s"];\n""" %(k, self.vertex_to_str(k))
 
         # creation of edges
         # edges 0
-        print "\n\t/* edges of type 0 */"
-        print "\tedge [%s];" %(edge0_properties)
+        s += "\n\t/* edges of type 0 */\n"
+        s += "\tedge [%s];\n" %(edge0_properties)
         for i,n in enumerate(self._neighbours) :
             if n[0] != -1 :
-                print """\t%d->%d;""" %(i,n[0])
+                s += """\t%d->%d;\n""" %(i,n[0])
 
         #edges 1
-        print "\n\t/* edges of type 1 */"
-        print "\tedge [%s];" %(edge1_properties)
+        s += "\n\t/* edges of type 1 */\n"
+        s += "\tedge [%s];\n" %(edge1_properties)
         for i,n in enumerate(self._neighbours) :
             if n[1] != -1 :
-                print """\t%d->%d;""" %(i,n[1])
+                s += """\t%d->%d;\n""" %(i,n[1])
 
         # end
-        print "}"
+        s += "}\n"
+
+        return s
 
 
