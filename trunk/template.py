@@ -496,39 +496,6 @@ class FlippedQuadraticPermutation(GeneralizedPermutation) :
 ##############################
 ##      RAUZY DIAGRAMS      ##
 ##############################
-
-
-class Path(object) :
-    r"""
-    Class for path in Rauzy Diagram
-
-    It provide a special iterator for computation.
-    """
-    def __init__(self, value = (), parent = None) :
-        l = []
-        # syntax verification
-        if len(value) == 0 : raise TypeError("a path has at least a point")
-        if type(value[0]) != int : raise TypeError("the first element must be an integer")
-        l.append(value[0])
-
-        for i in value[1:] :
-            if type(i) == int  :
-               if (i != 0) and (i != 1) : raise TypeError("type must be 0 or 1")
-               l.append(i)
-            if type(i) == tuple :
-                if len(i) != 2 : raise TypeError("syntax problem")
-                if (type(i[0]) != int) or (type(i[1]) != int) : raise TypeError("syntax problem")
-                if (i[0] != 0) and (i[0] != 1) : raise TypeError("type must be 0 or 1")
-                l.extend([i[0]] * i[1])
-
-        
-        self._list_of_edges = l
-        self._parent = parent
-
-        if self._parent != None :
-            raise TypeError
-            
-
 class RauzyDiagram(object) :
     r"""
     General template for Rauzy Diagram
