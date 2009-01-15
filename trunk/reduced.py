@@ -13,11 +13,13 @@ AUTHORS:
 """
 
 import template
-SageObject = object
 
-class ReducedPermutation(SageObject) :
+
+class ReducedPermutation(object) :
     r"""
     Template for reduced objects
+
+    ...DO NOT USE...
     """
 
     def __init__(self, a) :
@@ -42,10 +44,9 @@ class ReducedPermutation(SageObject) :
             self._alphabet = tuple(l)
 
 
-    doc_alphabet = "Eventual alphabet for the representation of the reduced permutation"
+    doc_alphabet = "Alphabet for the representation of the reduced permutation"
 
     alphabet = property(fget = get_alphabet, fset = set_alphabet, doc=doc_alphabet)
-
 
 
 ######################################
@@ -53,7 +54,7 @@ class ReducedPermutation(SageObject) :
 ######################################
 class AbelianPermutation(ReducedPermutation, template.AbelianPermutation):
     r"""
-    reduced Abelian permutation
+    Reduced Abelian permutation
 
     Abelian Permutation without numerotation of intervals. For initialization,
     you should use GeneralizedPermutation which is the class factory for all
@@ -312,7 +313,6 @@ class QuadraticPermutation(ReducedPermutation, template.QuadraticPermutation):
         AUTHORS :
             - Vincent Delecroix (2008-20-12)
         """
-
         p = QuadraticPermutation(([],[]))
         p._twin[0].extend(self._twin[0])
         p._twin[1].extend(self._twin[1])
@@ -416,7 +416,7 @@ class QuadraticPermutation(ReducedPermutation, template.QuadraticPermutation):
 ####     FLIPPED       #####
 ############################
 
-class FlippedReducedPermutation(SageObject) :
+class FlippedReducedPermutation(object) :
     r"""
     Template for reduced permutation with flip
 
@@ -674,3 +674,6 @@ class QuadraticRauzyDiagram(template.RauzyDiagram) :
             - Vincent Delecroix (2008-12-20)
         """
         return str(self._neighbours[i])
+
+    def first_vertex(self, p) :
+        pass
