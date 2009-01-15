@@ -32,8 +32,6 @@ AUTHORS:
 from defaut import WordMorphism
 import template
 
-SageObject = object
-
 
 class NeighbourError(Exception) :
     def __init__(self, value) :
@@ -43,7 +41,7 @@ class NeighbourError(Exception) :
         return self.value
     
 
-class LabeledPermutation(SageObject) :
+class LabeledPermutation(object) :
     r"""
     General template for labeled objects
 
@@ -386,7 +384,7 @@ class QuadraticPermutation(template.QuadraticPermutation, LabeledPermutation) :
 #####     RAUZY DIAGRAMS     #####
 ##################################
 
-class LabeledRauzyDiagram(SageObject) :
+class LabeledRauzyDiagram(object) :
     r"""
     Template for Rauzy diagrams of labeled permutations
     """

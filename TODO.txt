@@ -7,7 +7,7 @@ A list of thing to do in order (or not)
 * merge the pythonic version into SAGE :
    - consider SageObject  (in particuliar the special __latex__ method)
    - usage of WordMorphism
-   - usage of native Alphabet for labelization
+   - usage of Alphabet for labelization
    - usage of Matrix
    - RauzyDiagram as a child of Graph
 

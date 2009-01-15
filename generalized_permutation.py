@@ -96,7 +96,10 @@ class NoMatchingTwin(Exception):
 
 def GeneralizedPermutation(*args,**kargs):
     r"""
-    Class factory for Generalized Permutation
+    Return an object representing a generalized permutation
+
+    Those object appears as combinatoric part of an interval exchange
+    transformation (IET).
 
     INPUT :
          arguments must be in one of the following forms :
@@ -114,22 +117,21 @@ def GeneralizedPermutation(*args,**kargs):
         a generalized permutation (eight possible types)
 
     EXAMPLES :
-        sage : p = GeneralizedPermutation('a b c d','d c b a')
-        sage : q = GeneralizedPermutation([['a','b','c','d'],['d','c','b','a']])
-        sage : p == q
-        True
-        sage : p
+        sage : GeneralizedPermutation('a b c d','d c b a')
         a b c d
         d c b a
-        sage : p.is_reducible()
-        False
-        sage : p.rauzy_move(0)
+        sage : GeneralizedPermutation([['a','b','c','d'],['d','c','b','a']])
         a b c d
-        d a c b
-        sage : d = p.rauzy_diagram()
-        sage : d.dot()   # output a dot file on screen which should be used to
-        generate pictures
-       
+        d c b a
+        sage : GeneralizedPermutation('a b b', 'c c a')
+        a b b
+        c c a
+        sage : GeneralizedPermutation('a b c', 'c b a', reduced = True)
+        a b c
+        c b a
+        sage : GeneralizedPermutation('a b b' 'c c a', reduced = True)
+        a b b
+        c c a
 
     NOTES :
         flipped permutations are not yet implemented
@@ -285,7 +287,7 @@ def GeneralizedPermutation(*args,**kargs):
 
 def RauzyDiagram(*args, **kargs) :
     r"""
-    Class factory for Rauzy Diagrams
+    Return an object coding a Rauzy diagram
 
     INPUT :
          exactly the same as GeneralizedPermutation
@@ -294,11 +296,16 @@ def RauzyDiagram(*args, **kargs) :
         a rauzy_diagram (eight possible types)
 
     EXAMPLES :
-        sage : d = RauzyDiagram('a b c','c b a')
-        sage : d
-        0 : ('a b c', 'c b a')  [1,2]
-        1 : ('a b c', 'c a b')  [0,1]
-        2 : ('a c b', 'c b a')  [2,0]
+        sage :  RauzyDiagram('a b c','c b a')
+         0 : ('a b c', 'c b a')  [1,2]
+         1 : ('a b c', 'c a b')  [0,1]
+         2 : ('a c b', 'c b a')  [2,0]
+        sage : RauzyDiagram('a b b', 'c c a', reduced = True)
+         0 : ('a b b', 'c c a')  [1, 0]
+         1 : ('a a b b', 'c c')  [-1, 2]
+         2 : ('a a b', 'b c c')  [2, 3]
+         3 : ('a a', 'b b c c')  [0, -1]
+        
 
         Each line of the representation of RauzyDiagrams correspond to :
         'internal number' : 'permutation' ['0-neighbour', '1-neighbour']
@@ -333,7 +340,6 @@ def RauzyDiagram(*args, **kargs) :
       - Vincent Delecroix (2008-20-12)
 
     """
-
     if not kargs.has_key("reduced") : kargs["reduced"] = False
     if not kargs.has_key("flips") : kargs["flips"] = []
 

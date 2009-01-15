@@ -9,19 +9,8 @@ every method here start with the special word 'twin'.
 """
 
 
-# from sage.ext.sage_object import SageObject
-SageObject = object
 
-def is_simple(s) :
-    """s must be a list. Return True if each element is non repeated. """
-
-    for i in s :
-        if s.count(i) != 1 : return False
-    return True
-
-
-
-class GeneralizedPermutation(SageObject) :
+class GeneralizedPermutation(object) :
     r"""
     General template for all types
     """
@@ -211,13 +200,15 @@ class AbelianPermutation(GeneralizedPermutation) :
         r"""
         Test of Rauzy movability (with an eventual specified choice of winner)
 
-        An abelian permutation as rauzy_movable with 0 and 1 type
+        An abelian permutation is rauzy_movable with 0 and 1 type
         simultaneously. But, for compatibility with quadratic permutations, a
         winner could be specified.
 
         A Rauzy move can be performed on an abelian permutation if and only the
         two extremities intervals don't have the same label.
 
+        remark : rauzy_movability implies reducibility
+        
         INPUT:
             eventually a winner : 0 or 1
 
@@ -226,11 +217,20 @@ class AbelianPermutation(GeneralizedPermutation) :
 
         EXAMPLES:
             sage : p = GeneralizedPermutation('a b c', 'c b a')
-            sage : p.is_reducible()
-            False
-            sage : p = GeneralizedPermutation('a b c', 'b a c')
-            sage : p.is_reducible()
+            sage : p.is_rauzy_movable()
             True
+            sage : p.is_rauzy_movable(0)
+            True
+            sage : p.is_rauzy_movable(1)
+            True
+
+            sage : p = GeneralizedPermutation('a b c', 'b a c')
+            sage : p.is_rauzy_movable()
+            False
+            sage : p.is_rauzy_movable(0)
+            False
+            sage : p.is_rauzy_movable(1)
+            False
 
         AUTHORS:
             - Vincent Delecroix (2008-12-20)
@@ -390,21 +390,27 @@ class QuadraticPermutation(GeneralizedPermutation) :
 
 
         # testing two corners empty on the right (i2 = i4 = 0)
-        A12, A22 = [], []
+        A11, A21 = s[0][:1], s[1][:1]
 
         for i1 in range(1, l0) :
-            if not is_simple(A11) : break
+            if s[0][i1-1] in A11 :
+                A11 = s[0][:1]
+                break
             A11 = s[0][:i1]
 
             
-            for i3 in range(0, l1) :
+            for i3 in range(1, l1) :
+                if s[1][i3-1] in A21 :
+                    A21 = s[1][:1]
+                    break
                 A21 = s[1][:i3]
-                if not is_simple(A21) : break
 
-                if sorted(A11 + A22) == sorted(A12 + A21) :
+                if sorted(A11)  == sorted(A21) :
                     if return_decomposition :
                         return True,(A11,A12,A21,A22)
                     return True
+            else : A11 = s[0][:1]
+        else : A21 = s[1][:1]
                 
         if return_decomposition :
             return False, ()
@@ -412,6 +418,30 @@ class QuadraticPermutation(GeneralizedPermutation) :
 
 
     def is_rauzy_movable(self,winner) :
+        r"""
+        Test of Rauzy movability (with an eventual specified choice of winner)
+
+        A quadratic (or generalized) permutation is rauzy_movable with 0 and 1
+        type depending on the possible length of the last interval. It's
+        depend of the length equation.
+
+        INPUT:
+            a winner : 0 or 1
+
+        OUTPUT:
+            a boolean
+
+        EXAMPLES:
+            sage : p = GeneralizedPermutation('a b b', 'c c a')
+            sage : p.is_reducible()
+            False
+            sage : p = GeneralizedPermutation('a b c', 'b a c')
+            sage : p.is_reducible()
+            True
+
+        AUTHORS:
+            - Vincent Delecroix (2008-12-20)
+        """
         loser = 1 - winner
         
         # the same letter at the right-end (False)
@@ -467,7 +497,8 @@ class FlippedQuadraticPermutation(GeneralizedPermutation) :
 ##      RAUZY DIAGRAMS      ##
 ##############################
 
-class Path(SageObject) :
+
+class Path(object) :
     r"""
     Class for path in Rauzy Diagram
 
@@ -476,7 +507,7 @@ class Path(SageObject) :
     def __init__(self, value = (), parent = None) :
         l = []
         # syntax verification
-        if len(value) == 0 : raise TypeError("a path as a start")
+        if len(value) == 0 : raise TypeError("a path has at least a point")
         if type(value[0]) != int : raise TypeError("the first element must be an integer")
         l.append(value[0])
 
@@ -490,10 +521,15 @@ class Path(SageObject) :
                 if (i[0] != 0) and (i[0] != 1) : raise TypeError("type must be 0 or 1")
                 l.extend([i[0]] * i[1])
 
-        tuple.__init__(self, tuple(l))
+        
+        self._list_of_edges = l
+        self._parent = parent
 
+        if self._parent != None :
+            raise TypeError
+            
 
-class RauzyDiagram(SageObject) :
+class RauzyDiagram(object) :
     r"""
     General template for Rauzy Diagram
 
@@ -524,9 +560,9 @@ class RauzyDiagram(SageObject) :
         """
         s = ""
         for i in range(len(self._permutations)-1) :
-            s += "%3d : " %(i) + self.vertex_to_str_one_line(i) + "  " + self.edges_to_str(i) + "\n"
+            s += "%3d : " %(i) + self.vertex_to_one_line_str(i) + "  " + self.edges_to_str(i) + "\n"
         i = len(self._permutations)-1
-        s += "%3d : " %(i) + self.vertex_to_str_one_line(i) + "  " + self.edges_to_str(i)
+        s += "%3d : " %(i) + self.vertex_to_one_line_str(i) + "  " + self.edges_to_str(i)
         return s
 
 
