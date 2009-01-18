@@ -34,7 +34,7 @@ Definition of labeled type permutation
 from sage.structure.sage_object import SageObject
 from sage.combinat.words.alphabet import Alphabet
 from sage.combinat.words.morphism import WordMorphism
-from sage.matrix.constructor import Matrix
+from sage.matrix.constructor import Matrix, identity_matrix
 
 import template
 
@@ -223,15 +223,15 @@ class LabeledAbelianPermutation(template.AbelianPermutation, LabeledPermutation)
             sage : p.rauzy_move(1)
             sage : s = s0 * s1
         """
-
         loser = 1 - winner
 
-        winner_letter = self._intervals[winner][-1]
         loser_letter = self._intervals[loser][-1]
-        d = dict(zip(self._intervals[0],self._intervals[0]))
-        
-        if winner == 0 : d[loser_letter] = loser_letter + winner_letter
-        else : d[loser_letter] = winner_letter + loser_letter
+
+        up_letter = self.intervals[0][-1]
+        down_letter = self.intervals[1][-1]
+
+        d = dict(zip([self._intervals[0]] * 2))
+        d[loser_letter] = down_letter + up_letter
 
         return WordMorphism(d)
 
@@ -422,14 +422,13 @@ class LabeledRauzyDiagram(SageObject) :
         String for the representation of a vertex.
 
         INPUT:
-            an indice of a vertex
+            i -- indice of a vertex
 
         OUTPUT:
             a string
 
         AUTHOR:
             - Vincent Delecroix (2008-12-20)
-
         """
         return self._permutations[i][0] + "\\n" + self._permutations[i][1]
 
@@ -439,7 +438,7 @@ class LabeledRauzyDiagram(SageObject) :
         One line string for the representation of a vertex.
 
         INPUT:
-            an indice of a vertex
+            i -- an indice of a vertex
 
         OUTPUT:
             a string
@@ -456,7 +455,7 @@ class LabeledRauzyDiagram(SageObject) :
         0-neighbour and the 1-neighbour).
 
         INPUT:
-            an indice of an edge
+            i -- an indice of an edge
 
         OUTPUT:
             a string
@@ -472,9 +471,11 @@ class LabeledRauzyDiagram(SageObject) :
         Compose an edges function on a path
 
         INPUT:
-            function must be of the form (indice,type) -> element
-            Moreover function(None) must be an identity element for
+            path -- a Path (actually a tuple)
+            function -- function must be of the form (indice,type) -> element
+            Moreover function(None,None) must be an identity element for
             initialization.
+            composition -- the composition function for the function. * if None (defaut None)
 
         EXAMPLES:
         
@@ -510,35 +511,89 @@ class LabeledRauzyDiagram(SageObject) :
         return result
 
 
-    def edge_to_substitution(self, i, winner) :
-        if (i == None) : return WordMorphism({})
+    def edge_to_substitution(self, i = None, winner = None) :
+        r"""
+        Return the substitution corresponding to the edge
 
-        loser = 1 - winner
-        loser_letter = self._permutations[i][loser][-1]
+        INPUT:
+            i -- integer
+            winner -- 0,1, the type of the edge
+
+        OUTPUT:
+            A WordMorphism
+
+        EXAMPLES:
+            sage : d = RauzyDiagram('a b c', 'c b a')
+            sage : d.edge_to_substitution(0,1)
+        """
+        d = dict(zip([list(self._intervals[i][0])] * 2))
+        if (i == None) and (winner = None) : return WordMorphism(d)
+
+        loser_letter = self._permutations[i][1-winner][-1]
+
         up_letter = self._permutations[i][0][-1]
         down_letter = self._permutations[i][1][-1]
 
-        return WordMorphism({loser_letter : down_letter + up_letter})
+        d[loser_letter] = down_letter + up_letter
+
+        return WordMorphism(d)
 
 
 
-    def edge_to_matrix(self, i, t) :
+    def edge_to_matrix(self, i = None, winner = None):
+        r"""
+        Return the corresponding matrix
+
+        INPUT:
+            i -- integer (number of a permutation)
+            winner -- 0 or 1, the type of the edge
+
+        OUTPUT:
+            A matrix
+
+        EXAMPLES:
+            sage: d = RauzyDiagram('a b c','c b a')
+            RauzyDiagram on three letters
+            sage : d.edge_to_matrix(0,1,0)
+        """
         if i == None : return identity_matrix(len(self._alphabet))
-        winner = self.numerize(self._permutations[i][t][-1])
-        loser = self.numerize(self._permutations[i][1-t][-1])
+
+        winner = self.numerize(self._permutations[i][winner][-1])
+        loser = self.numerize(self._permutations[i][1-winner][-1])
+
         m = identity_matrix(len(self._alphabet))
         m[winner, loser] = 1
         return m
 
 
-    def edge_to_winner(self, i, t) :
+    def edge_to_winner(self, i = None, winner = None):
+        r"""
+        Return the winner's name
+
+        INPUT:
+            i -- integer
+            winner -- 0 or 1, the type of the edge
+
+        OUTPUT:
+            A list of one letter
+        """
         if i == None : return []
-        return [self._permutations[i][t][-1]]
+        return [self._permutations[i][winner][-1]]
 
 
-    def edge_to_loser(self, i, t) :
+    def edge_to_loser(self, i = None, winner = None) :
+        r"""
+        Return the loser's name
+
+        INPUT:
+            i -- integer
+            winner -- 0 or 1, the type of the edge
+
+        OUTPUT:
+            A list of one letter
+        """
         if i == None : return []
-        return [self._permutations[i][1-t][-1]]
+        return [self._permutations[i][1-winner][-1]]
 
     
     def path_to_winner(self, *args) :
@@ -550,18 +605,8 @@ class LabeledRauzyDiagram(SageObject) :
 
 
     def path_to_substitution(self, *args) :
-        r"""
-        the path must be of the form :
-        (i,type,type,type,...,type)
-        or
-        (i,(type,n1),(type,n2),...,(type,nk))
-        or a mix
-        (i,type,(type,n1),type,type,(type,n2),...)
-
-        if an element is with (type,n) form the object must
-        support a poweration with ** symbol"""
-        
         return self.path_composition(args, self.edge_to_substitution)
+
 
     def path_to_matrix(self, *args) :
         return self.path_composition(args, self.edge_to_matrix)
@@ -588,13 +633,16 @@ class LabeledAbelianRauzyDiagram(template.RauzyDiagram, LabeledRauzyDiagram) :
         A special intialization before the insertion of the first vertex.
 
         INPUT:
-            a LabeledAbelianPermutation
+            p -- a LabeledAbelianPermutation
+
+        OUTPUT:
+            None
 
         AUTHOR:
             - Vincent Delecroix (2008-12-20)
         """
-        self._alphabet = p[0][:]
-        self.numerize = lambda l : self._alphabet.index(l)
+        self._alphabet = Alphabet(p[0])   # an OrderedAlphabet_Finite
+        self.numerize = lambda l : self._alphabet.rank(l)
         self.alphabetize = lambda i : self._alphabet[i]
 
     def vertex_to_permutation(self, i) :
