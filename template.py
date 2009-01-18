@@ -8,9 +8,11 @@ every method here start with the special word 'twin'.
 
 """
 
+from sage.structure.sage_object import SageObject
 
 
-class GeneralizedPermutation(object) :
+
+class GeneralizedPermutation(SageObject) :
     r"""
     General template for all types
     """
@@ -496,7 +498,7 @@ class FlippedQuadraticPermutation(GeneralizedPermutation) :
 ##############################
 ##      RAUZY DIAGRAMS      ##
 ##############################
-class RauzyDiagram(object) :
+class RauzyDiagram(SageObject) :
     r"""
     General template for Rauzy Diagram
 
