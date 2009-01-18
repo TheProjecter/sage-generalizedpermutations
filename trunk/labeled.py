@@ -227,10 +227,10 @@ class LabeledAbelianPermutation(template.AbelianPermutation, LabeledPermutation)
 
         loser_letter = self._intervals[loser][-1]
 
-        up_letter = self.intervals[0][-1]
-        down_letter = self.intervals[1][-1]
+        up_letter = self._intervals[0][-1]
+        down_letter = self._intervals[1][-1]
 
-        d = dict(zip([self._intervals[0]] * 2))
+        d = dict([(letter,letter) for letter in self._intervals[0]])
         d[loser_letter] = down_letter + up_letter
 
         return WordMorphism(d)
@@ -526,8 +526,8 @@ class LabeledRauzyDiagram(SageObject) :
             sage : d = RauzyDiagram('a b c', 'c b a')
             sage : d.edge_to_substitution(0,1)
         """
-        d = dict(zip([list(self._intervals[i][0])] * 2))
-        if (i == None) and (winner = None) : return WordMorphism(d)
+        d = dict([(letter,letter) for letter in self._alphabet])
+        if (i == None) and (winner == None) : return WordMorphism(d)
 
         loser_letter = self._permutations[i][1-winner][-1]
 
@@ -556,13 +556,13 @@ class LabeledRauzyDiagram(SageObject) :
             RauzyDiagram on three letters
             sage : d.edge_to_matrix(0,1,0)
         """
-        if i == None : return identity_matrix(len(self._alphabet))
+        if (i == None) and (winner == None) : return identity_matrix(len(self._alphabet))
 
-        winner = self.numerize(self._permutations[i][winner][-1])
-        loser = self.numerize(self._permutations[i][1-winner][-1])
+        winner_index = self.numerize(self._permutations[i][winner][-1])
+        loser_index = self.numerize(self._permutations[i][1-winner][-1])
 
         m = identity_matrix(len(self._alphabet))
-        m[winner, loser] = 1
+        m[winner_index, loser_index] = 1
         return m
 
 
