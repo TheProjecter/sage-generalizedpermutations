@@ -67,10 +67,10 @@ EXAMPLES:
 #*****************************************************************************
 
 
-#from sage.all import *
+from sage.structure.sage_object import SageObject
 
-import labeled
-import reduced
+from labeled import *
+from reduced import *
 
 class WrongParameter(Exception):
     def __init__(self,value):
@@ -267,26 +267,26 @@ def GeneralizedPermutation(*args,**kargs):
     if generalized == False :
         if flips == [] :
             if reduction == True :
-                return reduced.AbelianPermutation(a)
+                return ReducedAbelianPermutation(a)
             else :
-                return labeled.AbelianPermutation(a)
+                return LabeledAbelianPermutation(a)
         else :
             if reduction == True :
-                return reduced.FlippedAbelianPermutation(a,flips)
+                return ReducedFlippedAbelianPermutation(a,flips)
             else :
-                return labeled.FlippedAbelianPermutation(a,flips)
+                return LabeledFlippedAbelianPermutation(a,flips)
             return None
     else :
         if flips == [] :
             if reduction == True :
-                return reduced.QuadraticPermutation(a)
+                return ReducedQuadraticPermutation(a)
             else :
-                return labeled.QuadraticPermutation(a)
+                return LabeledQuadraticPermutation(a)
         else :
             if reduction == True :
-                return reduced.FlippedQuadraticPermutation(a,flips)
+                return ReducedFlippedQuadraticPermutation(a,flips)
             else :
-                return labeled.FlippedQuadraticPermutation(a,flips)
+                return LabeledFlippedQuadraticPermutation(a,flips)
 
 
 

@@ -12,6 +12,8 @@ AUTHORS:
     -- Vincent Delecroix (2008-12-20): initial version
 """
 
+from sage.combinat.words.alphabet import Alphabet
+
 import template
 
 
@@ -22,10 +24,13 @@ class ReducedPermutation(object) :
     ...DO NOT USE...
     """
 
-    def __init__(self, a) :
+    def __init__(self, a, alphabet = None) :
         self._twin = [[],[]]
 
-        self._init_alphabet(a)
+        if alphabet == None :
+            self._init_alphabet(a)
+        else : self._alphabet = alphabet
+        
         self._alphabetize = lambda i : self._alphabet[i]
 
         self._init_twin(a)
@@ -38,10 +43,10 @@ class ReducedPermutation(object) :
         
 
     def set_alphabet(self,l) :
-        if (type(l) != tuple) and (type(l) != list) and (type(l) != str) : raise TypeError("Must be tuple, list or string")
-        elif len(l) != len(self) : raise TypeError("Bad length")
-        else :
-            self._alphabet = tuple(l)
+        a = Alphabet(l)
+        if len(a) != len(self) : raise TypeError("Must be of the same length the permutation is")
+        self._alphabet = a
+
 
 
     doc_alphabet = "Alphabet for the representation of the reduced permutation"
@@ -52,7 +57,7 @@ class ReducedPermutation(object) :
 ######################################
 #####     ABELIAN PERMUTATION    #####
 ######################################
-class AbelianPermutation(ReducedPermutation, template.AbelianPermutation):
+class ReducedAbelianPermutation(ReducedPermutation, template.AbelianPermutation):
     r"""
     Reduced Abelian permutation
 
@@ -136,7 +141,7 @@ class AbelianPermutation(ReducedPermutation, template.AbelianPermutation):
             sage : p == q
             False
         """
-        p = AbelianPermutation(([],[]))
+        p = ReducedAbelianPermutation(([],[]))
         p._twin[0].extend(self._twin[0])
         p._twin[1].extend(self._twin[1])
         p._alphabet = self._alphabet
@@ -144,7 +149,7 @@ class AbelianPermutation(ReducedPermutation, template.AbelianPermutation):
 
     
     def _init_alphabet(self,a) :
-        self._alphabet = tuple(a[0][:])
+        self._alphabet = Alphabet(a[0])
 
 
     def __list__(self) :
@@ -196,7 +201,7 @@ class AbelianPermutation(ReducedPermutation, template.AbelianPermutation):
             sage : p == q
             False
         """
-        q = AbelianPermutation(("",""))
+        q = ReducedAbelianPermutation(("",""))
         q._twin = [self._twin[0][:], self._twin[1][:]]
         q._alphabet = self._alphabet
         q._alphabetize = lambda i : self._alphabet[i]
@@ -234,7 +239,7 @@ class AbelianPermutation(ReducedPermutation, template.AbelianPermutation):
 ##############    QUADRATIC REDUCED PERMUTATIONS    #################
 #####################################################################
 
-class QuadraticPermutation(ReducedPermutation, template.QuadraticPermutation):
+class ReducedQuadraticPermutation(ReducedPermutation, template.QuadraticPermutation):
     r"""
     reduced quadratic (or generalized) permutation
 
@@ -313,7 +318,7 @@ class QuadraticPermutation(ReducedPermutation, template.QuadraticPermutation):
         AUTHORS :
             - Vincent Delecroix (2008-20-12)
         """
-        p = QuadraticPermutation(([],[]))
+        p = ReducedQuadraticPermutation(([],[]))
         p._twin[0].extend(self._twin[0])
         p._twin[1].extend(self._twin[1])
         p._alphabet = self._alphabet
@@ -409,7 +414,7 @@ class QuadraticPermutation(ReducedPermutation, template.QuadraticPermutation):
             - Vincent Delecroix (2008-12-20)
         """
 
-        return QuadraticRauzyDiagram(self)
+        return ReducedQuadraticRauzyDiagram(self)
 
 
 ############################
@@ -425,7 +430,7 @@ class FlippedReducedPermutation(object) :
     pass
 
 
-class FlippedAbelianPermutation(FlippedReducedPermutation, template.FlippedAbelianPermutation) :
+class FlippedReducedAbelianPermutation(FlippedReducedPermutation, template.FlippedAbelianPermutation) :
     r"""
     Flipped reduced abelian permutation
 
@@ -434,7 +439,7 @@ class FlippedAbelianPermutation(FlippedReducedPermutation, template.FlippedAbeli
     pass
 
 
-class FlippedQuadraticPermutation(FlippedReducedPermutation, template.FlippedQuadraticPermutation) :
+class FlippedReducedQuadraticPermutation(FlippedReducedPermutation, template.FlippedQuadraticPermutation) :
     r"""
     Flipped reduced quadratic (or generalized) permutation
 
@@ -472,7 +477,7 @@ class AbelianRauzyDiagram(template.RauzyDiagram) :
         storage function should be change in future version.
 
         INPUT:
-            a reduced.AbelianPermutation
+            a ReducedAbelianPermutation
 
         OUTPUT:
             a "vertex-typed" object (actually string)
@@ -493,14 +498,14 @@ class AbelianRauzyDiagram(template.RauzyDiagram) :
             an indice of a vertex
 
         OUTPUT:
-            a reduced.AbelianPermutation
+            a ReducedAbelianPermutation
 
         AUTHOR:
             - Vincent Delecroix (2008-12-20)
         """
         a0 = self._a0.split()
         a1 = self._permutations[i].split()
-        return AbelianPermutation([a0,a1])
+        return ReducedAbelianPermutation([a0,a1])
 
 
     def vertex_to_str(self, i) :
@@ -558,7 +563,7 @@ class AbelianRauzyDiagram(template.RauzyDiagram) :
         A special intialization before the insertion of the first vertex.
 
         INPUT:
-            a reduced.AbelianPermutation
+            a ReducedAbelianPermutation
 
         AUTHOR:
             - Vincent Delecroix (2008-12-20)
@@ -569,7 +574,7 @@ class AbelianRauzyDiagram(template.RauzyDiagram) :
 #####################################################
 ###########    QUADRATIC RAUZY DIAGRAM    ###########
 #####################################################
-class QuadraticRauzyDiagram(template.RauzyDiagram) :
+class ReducedQuadraticRauzyDiagram(template.RauzyDiagram) :
     r"""
     Reduced Rauzy diagram of quadratic (or generalized) permutations.
 
@@ -594,7 +599,7 @@ class QuadraticRauzyDiagram(template.RauzyDiagram) :
         storage function should be change in future version.
 
         INPUT:
-            a reduced.QuadraticPermutation
+            a ReducedQuadraticPermutation
 
         OUTPUT:
             a "vertex-typed" object (actually 2-uple of strings)
@@ -616,14 +621,14 @@ class QuadraticRauzyDiagram(template.RauzyDiagram) :
             an indice of a vertex
 
         OUTPUT:
-            a reduced.QuadraticPermutation
+            a ReducedQuadraticPermutation
 
         AUTHORS:
             - Vincent Delecroix (2008-12-20)
         """
         a0 = self._permutations[i][0].split()
         a1 = self._permutations[i][1].split()
-        return QuadraticPermutation([a0,a1])
+        return ReducedQuadraticPermutation([a0,a1])
 
 
     def vertex_to_str(self, i) :

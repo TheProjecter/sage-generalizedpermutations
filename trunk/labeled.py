@@ -7,33 +7,40 @@ Definition of labeled type permutation
     ('a b d b e','e d c a c') the labeled Rauzy diagram contains 8760
     permutations, and the reduced only 73).
 
-AUTHORS:
-    -- Vincent Delecroix (2008-12-20) : initial version
+    AUTHORS:
+        -- Vincent Delecroix (2008-12-20) : initial version
 
 
-    For creation of a labeled permutation simply use the class factory,
-    GeneralizedPermutation :
-    sage : p = GeneralizedPermutation('a b c', 'c b a')
+    EXAMPLES:
+        For creation of a labeled permutation simply use the class factory,
+        GeneralizedPermutation:
+        sage : p = GeneralizedPermutation('a b c', 'c b a')
 
-    or eventually
-    sage : p = GeneralizedPermutation('a b c', 'c b a', reduced = False)
+        or eventually:
+        sage : p = GeneralizedPermutation('a b c', 'c b a', reduced = False)
 
-    The same thing works for Rauzy diagrams :
-    sage : d1 = RauzyDiagram('a b c', 'c b a')
-    sage : d2 = RauzyDiagram('a b c', 'c b a', reduced = False)
-
-    You can compose matrix or substitution along a path in the Rauzy diagram :
-    sage : d = RauzyDiagram('a b c', 'c b a')
-    sage : s = d.path_to_substitution(0,0,1,0,1)
-    sage : m = d.path_to_matrix(0,0,1,0,1)
+        The same thing works for Rauzy diagrams:
+        sage : d1 = RauzyDiagram('a b c', 'c b a')
+        sage : d2 = RauzyDiagram('a b c', 'c b a', reduced = False)
+        
+        You can compose matrix or substitution along a path in the Rauzy
+        diagram:
+        sage : d = RauzyDiagram('a b c', 'c b a')
+        sage : s = d.path_to_substitution(0,0,1,0,1)
+        sage : m = d.path_to_matrix(0,0,1,0,1)
 
 """
 
-from defaut import WordMorphism
+from sage.structure.sage_object import SageObject
+from sage.combinat.words.alphabet import Alphabet
+from sage.combinat.words.morphism import WordMorphism
+from sage.matrix.constructor import Matrix
+
 import template
 
 
-class NeighbourError(Exception) :
+
+class NeighbourError(Exception):
     def __init__(self, value) :
         self.value = value
 
@@ -41,7 +48,7 @@ class NeighbourError(Exception) :
         return self.value
     
 
-class LabeledPermutation(object) :
+class LabeledPermutation(SageObject):
     r"""
     General template for labeled objects
 
@@ -104,7 +111,7 @@ class LabeledPermutation(object) :
 
 
 
-class AbelianPermutation(template.AbelianPermutation, LabeledPermutation) :
+class LabeledAbelianPermutation(template.AbelianPermutation, LabeledPermutation) :
     r"""
     labeled Abelian permutation
 
@@ -162,7 +169,7 @@ class AbelianPermutation(template.AbelianPermutation, LabeledPermutation) :
         AUTHORS:
             - Vincent Delecroix (2008-12-20)
         """
-        p = AbelianPermutation(([],[]))
+        p = LabeledAbelianPermutation(([],[]))
         p._twin[0].extend(self._twin[0])
         p._twin[1].extend(self._twin[1])
         p._intervals[0].extend(self._intervals[0])
@@ -246,14 +253,14 @@ class AbelianPermutation(template.AbelianPermutation, LabeledPermutation) :
 
         For more information, try help RauzyDiagram
         """
-        return AbelianRauzyDiagram(self)
+        return LabeledAbelianRauzyDiagram(self)
 
 
 #####################################################################
 ##############    QUADRATIC LABELED PERMUTATIONS    #################
 #####################################################################
 
-class QuadraticPermutation(template.QuadraticPermutation, LabeledPermutation) :
+class LabeledQuadraticPermutation(template.QuadraticPermutation, LabeledPermutation) :
     r"""
     labeled quadratic (or generalized) permutation
 
@@ -325,7 +332,7 @@ class QuadraticPermutation(template.QuadraticPermutation, LabeledPermutation) :
         AUTHORS:
             - Vincent Delecroix (2008-20-12)
         """
-        p = QuadraticPermutation(([],[]))
+        p = LabeledQuadraticPermutation(([],[]))
         p._twin[0].extend(self._twin[0])
         p._twin[1].extend(self._twin[1])
         p._intervals[0].extend(self._intervals[0])
@@ -374,9 +381,9 @@ class QuadraticPermutation(template.QuadraticPermutation, LabeledPermutation) :
             sage : p = GeneralizedPermutation('a b b', 'c c a')
             sage : d = p.rauzy_diagram()
 
-        For more information, try help RauzyDiagram or help labeled.QuadraticPermutation
+        For more information, try help RauzyDiagram or help LabeledQuadraticPermutation
         """
-        return QuadraticRauzyDiagram(self)
+        return LabeledQuadraticRauzyDiagram(self)
 
 
 
@@ -384,7 +391,7 @@ class QuadraticPermutation(template.QuadraticPermutation, LabeledPermutation) :
 #####     RAUZY DIAGRAMS     #####
 ##################################
 
-class LabeledRauzyDiagram(object) :
+class LabeledRauzyDiagram(SageObject) :
     r"""
     Template for Rauzy diagrams of labeled permutations
     """
@@ -560,7 +567,7 @@ class LabeledRauzyDiagram(object) :
         return self.path_composition(args, self.edge_to_matrix)
 
         
-class AbelianRauzyDiagram(template.RauzyDiagram, LabeledRauzyDiagram) :
+class LabeledAbelianRauzyDiagram(template.RauzyDiagram, LabeledRauzyDiagram) :
     r"""
     Labeled Rauzy diagram of abelian permutations.
 
@@ -581,7 +588,7 @@ class AbelianRauzyDiagram(template.RauzyDiagram, LabeledRauzyDiagram) :
         A special intialization before the insertion of the first vertex.
 
         INPUT:
-            a labeled.AbelianPermutation
+            a LabeledAbelianPermutation
 
         AUTHOR:
             - Vincent Delecroix (2008-12-20)
@@ -607,12 +614,12 @@ class AbelianRauzyDiagram(template.RauzyDiagram, LabeledRauzyDiagram) :
         """
         a0 = self._permutations[i][0].split()
         a1 = self._permutations[i][1].split()
-        return AbelianPermutation([a0,a1])
+        return LabeledAbelianPermutation([a0,a1])
 
 
 
 
-class QuadraticRauzyDiagram(template.RauzyDiagram, LabeledRauzyDiagram) :
+class LabeledQuadraticRauzyDiagram(template.RauzyDiagram, LabeledRauzyDiagram) :
     r"""
     Labeled Rauzy diagram of quadratic permutations.
 
@@ -642,7 +649,7 @@ class QuadraticRauzyDiagram(template.RauzyDiagram, LabeledRauzyDiagram) :
         A special intialization before the insertion of the first vertex.
 
         INPUT:
-            a labeled.QuadraticPermutation
+            a LabeledQuadraticPermutation
 
         AUTHOR:
             - Vincent Delecroix (2008-12-20)
@@ -666,11 +673,11 @@ class QuadraticRauzyDiagram(template.RauzyDiagram, LabeledRauzyDiagram) :
             an indice of a vertex
 
         OUTPUT:
-            a labeled.QuadraticPermutation
+            a LabeledQuadraticPermutation
 
         AUTHOR:
             - Vincent Delecroix (2008-12-20)
         """
         a0 = self._permutations[i][0].split()
         a1 = self._permutations[i][1].split()
-        return QuadraticPermutation([a0,a1])
+        return LabeledQuadraticPermutation([a0,a1])
