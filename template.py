@@ -5,9 +5,34 @@ General template for different types of generalized permutations and Rauzy diagr
 Here is the main file concerning the storage of general permutations. It's useful
 for each of the type reduced or labeled. Because it's almost the same thing. Almost
 every method here start with the special word 'twin'.
+
+
+TODO:
+    Construct the inheritance as combinatorial types inclusion
+    (to allow stratas manipulations)
 """
+#*****************************************************************************
+#       Copyright (C) 2008 Vincent Delecroix <delecroix@iml.univ-mrs.fr>
+#
+#  Distributed under the terms of the GNU General Public License (GPL)
+#                  http://www.gnu.org/licenses/
+#*****************************************************************************
+
 
 from sage.structure.sage_object import SageObject
+
+
+def is_GeneralizedPermutation(obj):
+    r"""
+    Returns True if obj is a Generalized Permutation
+
+    EXAMPLES:
+        sage : is_GeneralizedPermutation(('a b c','c b a'))
+        False
+        sage : is_GeneralizedPermutation(GeneralizedPermutation('a b c','c b a'))
+        True
+    """
+    return isinstance(obj, GeneralizedPermutation)
 
 
 class GeneralizedPermutation(SageObject) :
@@ -19,12 +44,14 @@ class GeneralizedPermutation(SageObject) :
         l = list(self)
         return ' '.join(map(str,l[0])) + "\n" + ' '.join(map(str,l[1]))
 
+
     def __len__(self) :
         return (len(self._twin[0]) + len(self._twin[1])) / 2
 
+
     def length_top(self) :
         r"""
-        return the number of intervals in the top segment
+        Returns the number of intervals in the top segment.
 
         OUTPUT:
             an integer
@@ -37,15 +64,13 @@ class GeneralizedPermutation(SageObject) :
             sage : p = GeneralizedPermutation('a b c b c d d', 'e e a')
             p.length_top()
             7
-
-        AUTHORS:
-            - Vincent Delecroix (2008-12-20)
         """
         return len(self._twin[0])
 
+
     def length_bottom(self) :
         r"""
-        return the number of intervals in the bottom segment
+        Return the number of intervals in the bottom segment.
 
         OUTPUT:
             an integer
@@ -63,7 +88,7 @@ class GeneralizedPermutation(SageObject) :
 
     def length(self) :
         r"""
-        return a 2-uple of lengths
+        Returns a 2-uple of lengths.
 
         p.length() is identical to (p.length_top(), p.length_bottom())
 
@@ -88,11 +113,11 @@ class GeneralizedPermutation(SageObject) :
         Get the label of a specified interval
 
         INPUT:
-            integer : 0 or 1
-            2-uple of integer and slice : 0,1 and a slice between 0 and
-            length_top() (if 0) and between 0 and length_bottom() (if 1)
-            2-uple of integers : 0,1 and the other between 0 and length_top()
-            (if 0) and between 1 and length_bottom() (if 1)
+            i -- integer 0 or 1
+              or 2-uple of integer and slice  0,1 and a slice between 0 and
+              length_top() (if 0) and between 0 and length_bottom() (if 1)
+              or 2-uple of integers : 0,1 and the other between 0 and length_top()
+              (if 0) and between 1 and length_bottom() (if 1)
 
         EXAMPLES:
             sage : p = GeneralizedPermutation('a b c d', 'd c b a')
@@ -106,19 +131,33 @@ class GeneralizedPermutation(SageObject) :
             ['d']
             sage : p[1][-1]
             ['a']
-
-        AUTHORS:
-            - Vincent Delecroix (2008-12-20)
         """
         s = self.__list__()
         if type(i) == int :
-            if i == 0 : return s[0]
-            elif i == 1 : return s[1]
-            else : raise IndexError
+            return s[i]
         if type(i) == tuple :
-            if (len(i) != 2) or (type(i[0]) != int ) : raise IndexError
+            if (len(i) != 2) or (type(i[0]) != int) : raise IndexError
             return s[i[0]][i[1]]
 
+
+
+
+def is_AbelianPermutation(obj):
+    r"""
+    Returns true if obj is an Abelian Permutation.
+
+    An abelian permutation is obtained as codage of interval exchange transformations.
+
+    EXAMPLES:
+        sage : p = GeneralizedPermutation('a b c', 'c b a')
+        sage : is_AbelianPermutation(p)
+        True
+
+        sage : p = GeneralizedPermutation('a b b', 'c c a')
+        sage : is_AbelianPermutation(p)
+        False
+    """
+    return isinstance(obj, AbelianPermutation)
 
 
 class AbelianPermutation(GeneralizedPermutation) :
@@ -130,8 +169,6 @@ class AbelianPermutation(GeneralizedPermutation) :
     AUTHORS:
         - Vincent Delecroix (2008-12-20)
     """
-
-
     def _init_twin(self,a):
         self._twin = [a[0][:],a[1][:]]
         for i in range(len(self._twin[0])) :
@@ -484,186 +521,12 @@ class QuadraticPermutation(GeneralizedPermutation) :
 ###################
 ##### FLIPPED #####
 ###################
-def _labelize_flip(t) :
-    if t[1] == 1 :
-        return ' ' + str(t[0])
-    else :
-        return '-' + str(t[0])
-
-
-class FlippedGeneralizedPermutation(GeneralizedPermutation) :
-    r"""
-    General template for all flipped types
-
-    flip is integrated in the twin with 1 or -1
-    """
+class FlippedPermutation(GeneralizedPermutation):
     pass
-
-
-    def __repr__(self) :
-        l = list(self)
-        return ' '.join(map(_labelize_flip,l[0])) + "\n" + ' '.join(map(self.labelize,l[1]))
-
-    def __len__(self) :
-        return (len(self._twin[0]) + len(self._twin[1])) / 2
-
-    def __getitem__(self,i) :
-        r"""
-        Get labels and flips of specified interval
-
-        INPUT:
-            integer : 0 or 1
-            2-uple of integer and slice : 0,1 and a slice between 0 and
-            length_top() (if 0) and between 0 and length_bottom() (if 1)
-            2-uple of integers : 0,1 and the other between 0 and length_top()
-            (if 0) and between 1 and length_bottom() (if 1)
-
-        EXAMPLES:
-            sage : p = GeneralizedPermutation('a b c d', 'd c b a')
-            sage : p[0]
-            ['a', 'b', 'c', 'd']
-            sage : p[1]
-            ['d', 'c', 'b', 'a']
-            sage : p[0][2:]
-            ['c', 'd']
-            sage : p[0][-1]
-            ['d']
-            sage : p[1][-1]
-            ['a']
-
-        AUTHORS:
-            - Vincent Delecroix (2008-12-20)
-        """
-        s = self.__list__()
-        if type(i) == int :
-            if i == 0 : return s[0]
-            elif i == 1 : return s[1]
-            else : raise IndexError
-        if type(i) == tuple :
-            if (len(i) != 2) or (type(i[0]) != int ) : raise IndexError
-            return s[i[0]][i[1]]
-    pass
-
-
-
-class FlippedAbelianPermutation(FlippedAbelianPermutation) :
-    r"""
-    General template for all flipped abelian permutation
-
-    ...DO NOT USE...
-    """
-
-
-    def _init_twin(self,a):
-        self._twin = [a[0][:],a[1][:]]
-        for i in range(len(self._twin[0])) :
-            c = self._twin[0][i]
-            j = self._twin[1].index(c)
-            self._twin[0][i] = j
-            self._twin[1][j] = i
-
-
-    def _twin_rauzy_move(self, winner) :
-        r"""
-        do a Rauzy move (only on the twin_list) for this choice of winner.
-
-        AUTHORS:
-            - Vincent Delecroix (2008-12-20)
-        """
-
-        loser = 1 - winner
-
-        i_win, flip_win = self._twin[winner][-1]
-        i_los, flip_los = self._twin[loser][-1]
-
-        #increment (1 if no flip on the win, else 0)
-        incr = (1+flip_win)/2
-       
-        # move the loser
-        del self._twin[loser][-1]
-        self._twin[loser].insert(i_win+incr, (i_los, flip_los * flip_win))
-        self._twin[winner][i_los] = (i_win+incr, flip_los*flip_win)
-
-        # increment the twins in the winner interval
-        for j in range(i_win + incr + 1, len(self._twin[loser])) :
-            tmp = self._twin[winner][self._twin[loser][j]]
-            self._twin[winner][self._twin[loser][j]] = (tmp[0]+1, tmp[1])
-
-
-    def is_reducible(self, return_decomposition=False) :
-        r"""
-        Test of reducibility
-
-        An abelian permutation p = (p0,p1) is reducible if
-        the set(p0[:i]) = set(p1[:i]) for an i < len(p0)
-
-        OUTPUT:
-            a boolean
-            
-        EXAMPLE:
-            sage : p = GeneralizedPermutation('a b c', 'c b a')
-            sage : p.is_reducible()
-            False
-
-            sage : p = GeneralizedPermutation('a b c', 'b a c')
-            sage : p.is_reducible()
-            True
-        """
-        s0, s1 = 0, 0
-        for i in range(len(self)-1) :
-            s0 += i
-            s1 += self._twin[0][i][0]
-            if s0 == s1 :
-                if return_decomposition :
-                    return True, (self[0][:i+1], self[0][i+1:], self[1][:i+1], self[1][i+1:])
-                return True
-        if return_decomposition :
-            return False, None
-        return False
-
-
-    def is_rauzy_movable(self, winner=0) :
-        r"""
-        Test of Rauzy movability (with an eventual specified choice of winner)
-
-        An abelian permutation is rauzy_movable with 0 and 1 type
-        simultaneously. But, for compatibility with quadratic permutations, a
-        winner could be specified.
-
-        A Rauzy move can be performed on an abelian permutation if and only the
-        two extremities intervals don't have the same label.
-
-        remark : rauzy_movability implies reducibility
         
-        INPUT:
-            eventually a winner : 0 or 1
-
-        OUTPUT:
-            a boolean
-
-        EXAMPLES:
-            sage : p = GeneralizedPermutation('a b c', 'c b a')
-            sage : p.is_rauzy_movable()
-            True
-            sage : p.is_rauzy_movable(0)
-            True
-            sage : p.is_rauzy_movable(1)
-            True
-
-            sage : p = GeneralizedPermutation('a b c', 'b a c')
-            sage : p.is_rauzy_movable()
-            False
-            sage : p.is_rauzy_movable(0)
-            False
-            sage : p.is_rauzy_movable(1)
-            False
-
-        AUTHORS:
-            - Vincent Delecroix (2008-12-20)
-        """
-        return self._twin[winner][-1] != len(self._twin[winner]) - 1
-
-
+class FlippedAbelianPermutation(FlippedPermutation) :
+    """Everything concerning the twin list is here"""
+    pass
 
 class FlippedQuadraticPermutation(GeneralizedPermutation) :
     """Everything concerning the twin list is here"""
@@ -676,13 +539,8 @@ class FlippedQuadraticPermutation(GeneralizedPermutation) :
 class RauzyDiagram(SageObject) :
     r"""
     General template for Rauzy Diagram
-
-    ...DO NOT USE...
     """
     def __init__(self, p) :
-        r"""
-        Constructor of general Rauzy Diagram
-        """
         self._permutations = [p.copy()]
         self._neighbours = [[None,None]]
 
@@ -717,6 +575,9 @@ class RauzyDiagram(SageObject) :
         Just use the function vertex_to_permutation that must be defined
         in each child.
 
+        INPUT:
+            i -- integer
+
         AUTHORS:
             - Vincent Delecroix (2008-12-20)
         """
@@ -727,13 +588,10 @@ class RauzyDiagram(SageObject) :
 
     def __len__(self) :
         r"""
-        Number of vertex
+        Number of vertices.
 
         OUTPUT:
             an integer
-
-        AUTHORS:
-            - Vincent Delecroix
         """
         return len(self._permutations)
 
