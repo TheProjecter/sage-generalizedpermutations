@@ -221,15 +221,6 @@ def GeneralizedPermutation(*args,**kargs):
         if kargs["reduced"] == True : reduction = True
         else : reduction = False
 
-    if not kargs.has_key("flips") :
-        flips = []
-    elif type(kargs["flips"]) != list :
-        raise TypeError("flips must be a list")
-    else :
-        flips = kargs["flips"]
-        for j in flips :
-            if type(j) != str : raise TypeError("flips must be a list of strings")
-
       
     # verification of the coherence of a and choose between normal or generalized
     l = a[0] + a[1]
@@ -265,29 +256,15 @@ def GeneralizedPermutation(*args,**kargs):
 
     # repartition to different objects
     if generalized == False :
-        if flips == [] :
-            if reduction == True :
-                return ReducedAbelianPermutation(a)
-            else :
-                return LabeledAbelianPermutation(a)
+        if reduction == True :
+            return ReducedAbelianPermutation(a)
         else :
-            if reduction == True :
-                return ReducedFlippedAbelianPermutation(a,flips)
-            else :
-                return LabeledFlippedAbelianPermutation(a,flips)
-            return None
+            return LabeledAbelianPermutation(a)
     else :
-        if flips == [] :
-            if reduction == True :
-                return ReducedQuadraticPermutation(a)
-            else :
-                return LabeledQuadraticPermutation(a)
+        if reduction == True :
+            return ReducedQuadraticPermutation(a)
         else :
-            if reduction == True :
-                return ReducedFlippedQuadraticPermutation(a,flips)
-            else :
-                return LabeledFlippedQuadraticPermutation(a,flips)
-
+            return LabeledQuadraticPermutation(a)
 
 
 def RauzyDiagram(*args, **kargs) :
