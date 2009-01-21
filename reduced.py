@@ -417,38 +417,6 @@ class ReducedQuadraticPermutation(ReducedPermutation, template.QuadraticPermutat
         return ReducedQuadraticRauzyDiagram(self)
 
 
-############################
-####     FLIPPED       #####
-############################
-
-class FlippedReducedPermutation(object) :
-    r"""
-    Template for reduced permutation with flip
-
-    ...Will soon be...
-    """
-    pass
-
-
-class FlippedReducedAbelianPermutation(FlippedReducedPermutation, template.FlippedAbelianPermutation) :
-    r"""
-    Flipped reduced abelian permutation
-
-    ...Will soon be...
-    """
-    pass
-
-
-class FlippedReducedQuadraticPermutation(FlippedReducedPermutation, template.FlippedQuadraticPermutation) :
-    r"""
-    Flipped reduced quadratic (or generalized) permutation
-
-    ...Will soon be...
-    """
-    pass
-
-
-
 ###################################################
 #############    RAUZY DIAGRAMS    ################
 ###################################################

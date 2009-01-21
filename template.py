@@ -518,21 +518,6 @@ class QuadraticPermutation(GeneralizedPermutation) :
         del self._twin[loser][-1]
 
 
-###################
-##### FLIPPED #####
-###################
-class FlippedPermutation(GeneralizedPermutation):
-    pass
-        
-class FlippedAbelianPermutation(FlippedPermutation) :
-    """Everything concerning the twin list is here"""
-    pass
-
-class FlippedQuadraticPermutation(GeneralizedPermutation) :
-    """Everything concerning the twin list is here"""
-    pass
-
-
 ##############################
 ##      RAUZY DIAGRAMS      ##
 ##############################
