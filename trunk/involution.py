@@ -21,122 +21,122 @@ TODO:
 
 #from sage.structure.sage_object import SageObject
 SageObject = object
+# from sage.combinat.combinat import CombinatorialClass
+from combinat import CombinatorialObject, CombinatorialClass
 
 
-class InvolutionWithoutFixedPoint(SageObject) :
+
+# class InvolutionsWithoutFixedPoint(CombinatorialClass)   ??
+
+class InvolutionWithoutFixedPoint(CombinatorialObject) :
     r"""
-    Generic type to study geometry and dynamic of interval exchange map type.
-    This type derive from the CombinatorialClass, but all interval exchange
-    maps directly derive from this one.
+    Involution without fixed point on {0,...,2n}.
 
-
-    ALGORITHM:
-        A Generalized Permutation contains the following private thing :
-            __involution : a list
+    The same as the partition of this in sets with two elements. But here,
+    the point of view is more dynamic.
+    
 
     EXAMPLES:
-        InvolutionWithoutFixedPoint
+        There is three ways of initialization. The list method (the i-eme
+        image in position i) :
+        sage : f = InvolutionWithoutFixedPoint([1,0,3,2])
+        [1,0,3,2]
+        sage : f(0)
+        1
+        sage : f(2)
+        3
+
+        The 2-uple (or 2-list or 2-iterable) method. Regroup the orbits : 
+        sage : InvolutionWithoutFixedPoint([(0,1),(2,3)])
+        [1,0,3,2]
+        
 
     TODO:
-        Develop the general method
-        Define what must be redefined for each child
-        Provide a good way to initialization
+        Must be C code.
         Think about a Pyrex implementation because the only problem is the void
         pointer to data (is it possible to derive from the CombinatorialClass
         and be a pyrex file ?)
     """
-#########################
-####    LOW LEVEL    ####
-#########################
-    def __init__(self, involution = [], k=0):
-        self.__involution = [[i,None] for i in involution]
- 
-    def __repr__(self) :
-        return str(self.__involution[:self.__k]) + "\n" + str(self.__involution[self.__k:])
- 
-    def __len__(self) :
-        return self.length()
+    def __init__(self,l) :
+        r"""
+        Initialize or raise a type error
+        
+        """
+        if not isinstance(l, InvolutionWithoutFixedPoint) :
+            if not hasattr(l,  '__iter__') or not hasattr(l, '__len__') :
+                raise TypeError("Your data must be iterable and have a length")
 
-    def __iter__(self) :
-        raise NotImplementedError
+            if len(l) > 0 :
+                if isinstance(l[0], int) :
+                    for i in l :
+                        if not isinstance(i, int) : raise TypeError("Wrong list")
+                        if (i < 0) or (i >= len(l)) : raise TypeError("Wrong list")
 
-    def __reversed__(self) :
-        raise NotImplementedError
+                    for i in l :
+                        if l[i] == i : raise TypeError("Fixed point %d"%(i))
+                        if l[l[i]] != i : raise TypeError("Not an involution %d" %(i))
 
-    def __list__(self) :
-        raise NotImplementedError
+                        super(InvolutionWithoutFixedPoint, self).__init__(l)                        
 
-    def next(self) :
-        raise NotImplementedError
+                else :
+                    n = 2*len(l)
+                    tmp = [-1] * n
+                    for i in l :
+                        if not hasattr(i, '__iter__') or not hasattr(i, '__len__') or not hasattr(i,'__getitem__') : raise TypeError("Wrong type")
+                        if len(i) != 2 : raise TypeError("Type error")
+                        if not isinstance(i[0], int) or not isinstance(i[1], int) : raise TypeError("Wrong Type")
+                        if (i[0] < 0) or (i[0] >= n) or (i[1] < 0) or (i[1] >= n) : raise TypeError("Not in the good range")
+                        tmp[i[0]] = i[1]
+                        tmp[i[1]] = i[0]
 
-    def previous(self) :
-        raise NotImplementedError
+                    
+                    for i in tmp :
+                        if tmp[i] == -1 : raise TypeError("There is non specified images")
 
-    def last(self):
-        raise NotImplementedError
+                    super(InvolutionWithoutFixedPoint, self).__init__(tmp)
 
-    def first(self):
-        raise NotImplementedError
+                        
+
+    __call__ = CombinatorialObject.__getitem__
+    
 
     def move(self, from_pos, to_pos) :
         r"""
-        Perform a geometric move on the involution (data moves with no change).
+        Return the involution with corresponding position moved.
+
+        EXAMPLES:
+            sage : m = InvolutionWithoutFixedPoint([1,0,3,2])
+            sage : m.move(0,1)
+            [1, 0, 3, 2]
+            sage : m.move(0,2)
+            [2, 3, 0, 1]
+            sage : m.move(0,3)
+            [3, 2, 1, 0]
+            
         """
+        l = self._list[:]
+        
         if from_pos < to_pos :
-            mover_twin_pos = self.__involution[from_pos][0]
+            mover_twin_pos = l[from_pos]
 
-            for i in [j[0] for j in self.__involution[from_pos+1 : to_pos+1]] : self.__involution[i][0] -= 1
-            self.__involution[mover_twin_pos][0] = to_pos
+            for i in l[from_pos+1 : to_pos+1] : l[i] -= 1
+            l[mover_twin_pos] = to_pos
 
-            self.__involution.insert(to_pos+1, self.__involution[from_pos])
-            del self.__involution[from_pos]
+            l.insert(to_pos+1, l[from_pos])
+            del l[from_pos]
 
 
         elif to_pos < from_pos :
-            mover_twin_pos = self.__involution[from_pos][0]
+            mover_twin_pos = l[from_pos]
             
-            for i in [j[0] for j in self.__involution[to_pos : from_pos]] : self.__involution[i][0] += 1
-            self.__involution[mover_twin_pos][0] = to_pos
+            for i in l[to_pos : from_pos] : l[i] += 1
+            l[mover_twin_pos] = to_pos
 
-            self.__involution.insert(to_pos, self.__involution[from_pos])
-            del self.__involution[from_pos+1]
+            l.insert(to_pos, l[from_pos])
+            del l[from_pos+1]
 
+        return InvolutionWithoutFixedPoint(l)
 
-    
-    def is_abelian(self):
-        r"""
-        Returns True if the underlying generalized permutation is a real permutation.
-        """
-        if self.length_top() != self.length_bottom() :
-            return False
-
-        for i in range(self.length_bottom()) :
-            if self.__involution[i][0] < self.__k : return False
-
-        for i in range(self.length_bottom(), len(self)) :
-            if self.__involution[i][0] > self.__k : return False
-
-        return True
-        
-
-    def is_quadratic(self) :
-        r"""
-        Returns True if the underlying generalized permutation is not a permutation.
-        """
-        return not self.is_abelian()
-
-
-    def is_valid(self) :
-        r"""
-        Returns True if the datas correspond to a possible linear involution.
-        """
-        m1 = len(filter(lambda i : i < self.__k, self.__involution[:self.__k]))
-        m2 = len(filter(lambda i : i > self.__k, self.__involution[self.__k:]))
-        
-        if ((m1 == 0) and (m2 > 0)) or ((m1 > 0) and (m2 == 0)) :
-            return False
-
-        return True
             
 
         
@@ -146,7 +146,46 @@ class InvolutionWithoutFixedPoint(SageObject) :
 ############################
 ####    MIDDLE LEVEL    ####
 ############################
-class GeneralizedPermutation(object) :
+def GeneralizedPermutationOptions(**kwargs) :
+    r"""
+    Set the properties of Generalized Permutation representation.
+
+    """
+    global generalized_permutations_options
+
+    if kwargs == {} :
+        return generalized_permutations_options.copy()
+
+    if 'alphabet' in kwargs :
+        if kwargs['alphabet'] == "NN" :
+            generalized_permutations_options['alphabet'] = Alphabet(name="NN")
+            
+        elif kwargs['alphabet'] == "PP" :
+            generalized_permutations_options['alphabet'] = Alphabet(name="PP")
+
+        else :
+            generalized_permutations_options['alphabet'] = Alphabet(name="roman")
+        
+    
+class GeneralizedPermutation(InvolutionWithoutFixedPoint) :
+    r"""
+    General class for all types of GeneralizedPermutation.
+
+    The general class for Generalized Permutations and general
+    properties of Generalized Permutations.
+    """
+    def __init__(self, k=0, data=None) :
+        self.__involution = []
+        # the involution attached to the permutation
+
+        self.__k = k
+        # separation of intervals, set to half if abelian
+
+        if data != None :
+            self.__data = []
+        # data attached to each interval or couple of twin
+         
+
     def lengths(self) :
         r"""
         Returns a 2-uple of lengths.
@@ -207,66 +246,140 @@ class GeneralizedPermutation(object) :
         return len(self.__involution) - self.__k
 
 
-    def length(self) :
+    def __len__(self) :
         r"""
         Returns the length of the involution.
         """
         return len(self.__involution) / 2
 
     
+    def is_abelian(self):
+        r"""
+        Returns True if the underlying generalized permutation is a real permutation.
+        """
+        if self.length_top() != self.length_bottom() :
+            return False
+
+        for i in range(self.length_bottom()) :
+            if self.__involution[i] < self.__k : return False
+
+        for i in range(self.length_bottom(), len(self)) :
+            if self.__involution[i] > self.__k : return False
+
+        return True
+        
+
+    def is_quadratic(self) :
+        r"""
+        Returns True if the underlying generalized permutation is not a permutation.
+        """
+        return not self.is_abelian()
 
 
-#     def __getitem__(self,i) :
-#         r"""
-#         Get the label of a specified interval
+    def is_valid(self) :
+        r"""
+        Returns True if the involution correspond to a possible linear involution.
 
-#         INPUT:
-#             i -- integer 0 or 1
-#               or 2-uple of integer and slice  0,1 and a slice between 0 and
-#               length_top() (if 0) and between 0 and length_bottom() (if 1)
-#               or 2-uple of integers : 0,1 and the other between 0 and length_top()
-#               (if 0) and between 1 and length_bottom() (if 1)
+        Some degenerate case of Generalized Permutation admit no length. This
+        function examinates this case.
 
-#         EXAMPLES:
-#             sage : p = GeneralizedPermutation('a b c d', 'd c b a')
-#             sage : p[0]
-#             ['a', 'b', 'c', 'd']
-#             sage : p[1]
-#             ['d', 'c', 'b', 'a']
-#             sage : p[0][2:]
-#             ['c', 'd']
-#             sage : p[0][-1]
-#             ['d']
-#             sage : p[1][-1]
-#             ['a']
-#         """
-#         s = self.__list__()
-#         if type(i) == int :
-#             return s[i]
-#         if type(i) == tuple :
-#             if (len(i) != 2) or (type(i[0]) != int) : raise IndexError
-#             return s[i[0]][i[1]]
+        EXAMPLE:
+            sage : "a","a b b"
+            False
+            sage : "a b","b a"
+            True
+        """
+        m1 = len(filter(lambda i : i < self.__k, self.__involution[:self.__k]))
+        m2 = len(filter(lambda i : i > self.__k, self.__involution[self.__k:]))
+        
+        if ((m1 == 0) and (m2 > 0)) or ((m1 > 0) and (m2 == 0)) :
+            return False
+
+        return True
 
 
+    def __getitem__(self,i) :
+        r"""
+        Get the data of a specified interval
+
+        INPUT:
+            i -- integer
+
+        EXAMPLES:
+            sage : p = GeneralizedPermutation('a b c d', 'd c b a')
+            sage : p[0]
+            ['a', 'b', 'c', 'd']
+            sage : p[1]
+            ['d', 'c', 'b', 'a']
+            sage : p[0][2:]
+            ['c', 'd']
+            sage : p[0][-1]
+            ['d']
+            sage : p[1][-1]
+            ['a']
+        """
+        if hasattr(self,'__data'): return self.__data[i]
 
 
-# def is_AbelianPermutation(obj):
-#     r"""
-#     Returns true if obj is an Abelian Permutation.
+    def twin(self,i) :
+        r"""
+        Return what is the index of the twin.
 
-#     An abelian permutation is obtained as codage of interval exchange transformations.
+        
+        INPUT:
+            i -- integer
+        """
+        return self.__involution[i]
 
-#     EXAMPLES:
-#         sage : p = GeneralizedPermutation('a b c', 'c b a')
-#         sage : is_AbelianPermutation(p)
-#         True
 
-#         sage : p = GeneralizedPermutation('a b b', 'c c a')
-#         sage : is_AbelianPermutation(p)
-#         False
-#     """
-#     return False
+    def is_rauzy_movable(self,winner) :
+        r"""
+        Test of Rauzy movability
 
+        A quadratic (or generalized) permutation is rauzy_movable with 0 and 1
+        type depending on the possible length of the last interval. It's
+        depend of the length equation.
+
+        INPUT:
+            a winner : 0 or 1
+
+        OUTPUT:
+            a boolean
+
+        EXAMPLES:
+            sage : p = GeneralizedPermutation('a b b', 'c c a')
+            sage : p.is_reducible()
+            False
+            sage : p = GeneralizedPermutation('a b c', 'b a c')
+            sage : p.is_reducible()
+            True
+
+        AUTHORS:
+            - Vincent Delecroix (2008-12-20)
+        """
+        loser = 1 - winner
+        
+        # twin at the right-end (False)
+        if self.__involution[-1] == self.__involution[self.__k - 1] : return False
+        
+        # winner (or loser) letter is repeated on the other interval (True)
+        if self.__involution[-1] < self.__k : return True
+        if self.__involution[self.__k - 1] > self.__k : return True
+
+        # the loser letters are the only letter repeated in the loser interval (False)
+        if filter(lambda i : i < self.__k, self.__involution).count() == 2 :
+            return False
+
+        return True
+
+
+    def rauzy_move(self, winner) :
+        r"""
+        Perform a Rauzy move with this typee of winner.
+        incr is -1 or +1 and the flip invert this.
+        """
+        pass
+        
 
 # class AbelianPermutation(GeneralizedPermutation) :
 #     r"""
@@ -572,45 +685,6 @@ class GeneralizedPermutation(object) :
 #         return False
 
 
-#     def is_rauzy_movable(self,winner) :
-#         r"""
-#         Test of Rauzy movability (with an eventual specified choice of winner)
-
-#         A quadratic (or generalized) permutation is rauzy_movable with 0 and 1
-#         type depending on the possible length of the last interval. It's
-#         depend of the length equation.
-
-#         INPUT:
-#             a winner : 0 or 1
-
-#         OUTPUT:
-#             a boolean
-
-#         EXAMPLES:
-#             sage : p = GeneralizedPermutation('a b b', 'c c a')
-#             sage : p.is_reducible()
-#             False
-#             sage : p = GeneralizedPermutation('a b c', 'b a c')
-#             sage : p.is_reducible()
-#             True
-
-#         AUTHORS:
-#             - Vincent Delecroix (2008-12-20)
-#         """
-#         loser = 1 - winner
-        
-#         # the same letter at the right-end (False)
-#         if self.__involution[winner] == (loser, len(self.__involution[loser]) - 1) : return False
-        
-#         # the winner (or loser) letter is repeated on the other interval (True)
-#         if self.__involution[winner][-1][0] == loser : return True
-#         if self.__involution[loser][-1][0] == winner : return True
-
-#         # the loser letters is the only letter repeated in the loser interval (False)
-#         if [i for i,_ in self.__involution[loser]].count(loser) == 2 :
-#             return False
-
-#         return True
         
 
 #     def __involution_rauzy_move(self,winner) :
