@@ -1,5 +1,5 @@
 r"""
-(Flipped) Generalized (Reduced or Labeled) Permutation and associated Rauzy
+Generalized (Reduced or Labeled) Permutation and associated Rauzy
 diagrams.
 
     This library is designed to define and use different types of permutations
@@ -249,11 +249,6 @@ def GeneralizedPermutation(*args,**kargs):
             raise NoAdmissibleLength("There is no corresponding length")
 
 
-    # verification of coherence of flips
-    for flip in flips :
-        if flip not in alphabet : raise WrongParameter("flips non element of the alphabet")
-
-
     # repartition to different objects
     if generalized == False :
         if reduction == True :
@@ -274,7 +269,7 @@ def RauzyDiagram(*args, **kargs) :
     INPUT :
         intervals -- two list, or two strings
         reduced -- a boolean (defaut: False) to precise reduction
-        flips -- a list (defaut: []) for flipped permutations
+
     
     OUTPUT :
         rauzy diagram -- eight possible types depending on input datas
