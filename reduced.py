@@ -2,16 +2,17 @@ r"""
 Definition of reduced object
 
 
-    a reduced (generalized) permutation is better suitted to study strata of
+    A reduced (generalized) permutation is better suited to study strata of
     Abelian (or quadratic) holomorphic forms on Riemann surfaces. The Rauzy
     diagram is an invariant of such a component. Corentin  Boissy proved the
-    identification between Rauzy diagrams and connected components of strata.
+    identification of Rauzy diagrams with connected components of stratas.
     But the geometry of the diagram is not yet totally understood.
 
 AUTHORS: 
     -- Vincent Delecroix (2008-12-20): initial version
 """
-
+from sage import SageObject
+#from sage.structure.sage_object import SageObject
 Alphabet = tuple
 #from sage.combinat.words.alphabet import Alphabet
 
@@ -20,36 +21,52 @@ from template import FlippedAbelianPermutation, FlippedQuadraticPermutation
 from template import RauzyDiagram
 
 
-class ReducedPermutation(object) :
+class ReducedPermutation(SageObject) :
     r"""
     Template for reduced objects
 
     ...DO NOT USE...
     """
 
-    def __init__(self, a, alphabet = None) :
+    def __init__(self, intervals=[[],[]], alphabet = None) :
         r"""
-        TODO :
-        If alphabet is None use the global alphabet
-        generalizedpermutations_option['alphabet'] for representation
+        Constructor of ReducedPermutation.
+
+        INPUT:
+            intervals -- a list of two list of labels or a ReducedPermutation
+            alphabet --  (defaut: None) any object that can be used to
+            initialize an Alphabet  or None. In this latter case, the
+            letter of intervals are used to generate an alphabet.
         """
         self._twin = [[],[]]
 
+
+        self._init_twin(intervals)
+
         if alphabet == None :
-            self._init_alphabet(a)
-        else : self._alphabet = alphabet
+            self._init_alphabet(intervals)
+        elif isinstance(alphabet, Alphabet) :
+            if len(alphabet) < len(self) : raise TypeError("The alphabet is too short")
+            self._alphabet = alphabet
+        else :
+            self._alphabet = Alphabet(alphabet)
+            if len(alphabet) < len(self) : raise TypeError("The alphabet is too short")
         
         self._alphabetize = lambda i : self._alphabet[i]
-
-        self._init_twin(a)
 
 
 
     def get_alphabet(self) :
+        r"""
+        Return the alphabet.
+        """
         return self._alphabet
         
 
     def set_alphabet(self,l) :
+        r"""
+        Set a new alphabet.
+        """
         a = Alphabet(l)
         if len(a) != len(self) : raise TypeError("Must be of the same length the permutation is")
         self._alphabet = a
@@ -160,7 +177,7 @@ class ReducedAbelianPermutation(ReducedPermutation, AbelianPermutation):
 
     def __list__(self) :
         r"""
-        mutation of the permutation to a list of two lists
+        Mutation of the permutation to a list of two lists.
         """
         a0 = map(self._alphabetize, range(0,len(self)))
         a1 = map(self._alphabetize, self._twin[1])
@@ -238,12 +255,38 @@ class ReducedAbelianPermutation(ReducedPermutation, AbelianPermutation):
         AUTHORS :
             - Vincent Delecroix (2008-12-20)
         """
-        return AbelianRauzyDiagram(self)
+        return ReducedAbelianRauzyDiagram(self)
 
 
 #####################################################################
 ##############    QUADRATIC REDUCED PERMUTATIONS    #################
 #####################################################################
+def alphabetized_qtwin(twin, alphabet) :
+    i_a = 0
+    l = ([False]*len(twin[0]),[False]*len(twin[1]))
+    # False means empty here
+    for i in range(2) :
+        for j in range(len(l[i])) :
+            if  l[i][j] == False :
+                l[i][j] = alphabet[i_a]
+                l[twin[i][j][0]][twin[i][j][1]] = alphabet[i_a]
+                i_a += 1
+    return l
+
+
+def numerized_qflips(twin, flips) :
+    r"""
+    Return a list of flips as numbers.
+    """
+    ntwin = alphabetized_qtwin(twin, [1,2,3,4,5,6,7,8,9])  # TO MODIFY !!!
+    l = []
+    for interval in (0,1) :
+        for j,flip in enumerate (self._flips[i]):
+            if (self._flips == -1) and (ntwin[i][j] not in l) :
+                l.append(ntwin[i][j])
+    return l
+        
+
 class ReducedQuadraticPermutation(ReducedPermutation, QuadraticPermutation):
     r"""
     reduced quadratic (or generalized) permutation
@@ -353,16 +396,7 @@ class ReducedQuadraticPermutation(ReducedPermutation, QuadraticPermutation):
         AUTHORS:
             - Vincent Delecroix (2008-12-20)
         """
-        i_a = 0
-        l = ([False]*len(self._twin[0]),[False]*len(self._twin[1]))
-        # False means empty here
-        for i in range(2) :
-            for j in range(len(l[i])) :
-               if  l[i][j] == False :
-                    l[i][j] = self._alphabetize(i_a)
-                    l[self._twin[i][j][0]][self._twin[i][j][1]] = self._alphabetize(i_a)
-                    i_a += 1
-        return l
+        return alphabetized_qtwin(self._twin, self.alphabet)
         
 
     def __eq__(self, other) :
@@ -385,14 +419,14 @@ class ReducedQuadraticPermutation(ReducedPermutation, QuadraticPermutation):
         AUTHORS:
             - Vincent Delecroix (2008-12-20)
         """
-        return (self._twin[0] == other._twin[0]) and (self._twin[1] == other._twin[1])
+        return (self._twin == other._twin)
 
 
     def __ne__(self, other) :
         r"""
         Test of difference
         """
-        return (self._twin[0] != other._twin[0]) or (self._twin[1] != other._twin[1])
+        return (self._twin != other._twin)
 
 
     def rauzy_diagram(self) :
@@ -428,19 +462,35 @@ class ReducedQuadraticPermutation(ReducedPermutation, QuadraticPermutation):
 #############    FLIPPED ABELIAN    ################
 ####################################################
 class FlippedReducedPermutation(ReducedPermutation) :
-    def __init__(self, a, flips, alphabet=None) :
+    r"""
+    Flipped Reduced Permutation.
+
+    ... DO NOT USE...
+    """
+    def __init__(self, intervals=[[],[]], flips=[[],[]], alphabet=None) :
         self._twin = [[],[]]
 
-        if alphabet == None :
-            self._init_alphabet(a)
+        if alphabet == None : self._init_alphabet(intervals)
         else : self._alphabet = alphabet
         
         self._alphabetize = lambda i : self._alphabet[i]
 
-        self._init_twin(a, flips)
+        self._init_twin(intervals)
+        self._init_flips(intervals, flips)
+
 
 
 class FlippedReducedAbelianPermutation(FlippedAbelianPermutation, FlippedReducedPermutation) :
+    r"""
+    Flipped Reduced Abelian Permutation.
+
+    EXAMPLES:
+        sage : p = GeneralizedPermutation('a b c','c b a', flips=['a'])
+        sage : p.rauzy_move(1)
+        sage : p
+        -c -a  b
+        -c  b -a
+    """
     def _init_alphabet(self,a) :
         r"""
         Intialization procedure of the alphabet of self
@@ -455,21 +505,122 @@ class FlippedReducedAbelianPermutation(FlippedAbelianPermutation, FlippedReduced
 
     def __list__(self) :
         r"""
-        mutation of the permutation to a list of two lists
+        Mutation of the permutation in a list of two lists
         """
-        a0 = zip(map(self._alphabetize, range(0,len(self))), [flip for _,flip in self._twin[0]])
-        a1 = map(lambda i : (self._alphabetize(i[0]),i[1]), self._twin[1])
+        a0 = zip(map(self._alphabetize, range(0,len(self))), self._flips[0])
+        a1 = zip(map(self._alphabetize, self._twin[1]), self._flips[1])
         return [a0,a1]
+
     
+    def __eq__(self, other) :
+        r"""
+        Tests equality.
+        """
+        return (self._twin[0] == other._twin[0]) and (self._flips[0] == other._flips[0])
+
+
+    def __ne__(self, other) :
+        r"""
+        Tests difference.
+        """
+        return (self._twin[0] != other._twin[0]) or (self._flips[0] != other._flips[0])
+
+
+    def copy(self) :
+        p = FlippedReducedAbelianPermutation()
+        p._twin = [self._twin[0][:], self._twin[1][:]]
+        p._flips = [self._flips[0][:], self._flips[1][:]]
+        p._alphabet = self._alphabet
+        return p
+
+    def rauzy_diagram(self):
+        return FlippedReducedAbelianRauzyDiagram(self)
+
+
+class FlippedReducedQuadraticPermutation(FlippedQuadraticPermutation, FlippedReducedPermutation) :
+    r"""
+    Flipped Reduced Quadratic Permutation.
+    """
+    def __list__(self) :
+        r"""
+        Mutation of the permutation in a list of two lists.
+        """
+        i_a = 0
+        l = ([False]*len(self._twin[0]),[False]*len(self._twin[1]))
+        # False means empty here
+        for i in range(2) :
+            for j in range(len(l[i])) :
+               if  l[i][j] == False :
+                    l[i][j] = (self._alphabetize(i_a), self._flips[i][j])
+                    l[self._twin[i][j][0]][self._twin[i][j][1]] = (self._alphabetize(i_a), self._flips[i][j])
+                    i_a += 1
+        return l
+
+
+    def copy(self) :
+        p = FlippedReducedQuadraticPermutation()
+        p._twin = [self._twin[0][:], self._twin[1][:]]
+        p._flips = [self._flips[0][:], self._flips[1][:]]
+        p._alphabet = self._alphabet
+        return p
+
+
+    def _init_alphabet(self,a) :
+        r"""
+        Intialization procedure of the alphabet of self
+        """
+        tmp_alphabet = []
+        for letter in a[0]+a[1] :
+            if letter not in tmp_alphabet :
+                tmp_alphabet.append(letter)
+
+        self._alphabet = tuple(tmp_alphabet)
+
+
+    def __eq__(self, other) :
+        r"""
+        Tests equality.
+        """
+        return (self._twin == other._twin) and (self._flips == other._flips)
+
+
+    def __ne__(self, other) :
+        r"""
+        Test inequality.
+        """
+        return (self._twin != other._twin) or (self._flips != other._flips)
+
+    def rauzy_diagram(self) :
+        return FlippedReducedQuadraticRauzyDiagram(self)
 
 ###################################################
 #############    RAUZY DIAGRAMS    ################
 ###################################################
-
-
-class AbelianRauzyDiagram(RauzyDiagram) :
+class ReducedRauzyDiagram(RauzyDiagram) :
     r"""
-    Reduced Rauzy diagram of abelian permutations.
+    """
+    def get_alphabet(self) :
+        return self.__alphabet
+
+    def set_alphabet(self, value) :
+        alpha = Alphabet(value)
+        if len(alpha) < self._n : 
+            raise TypeError("Not enough value in your alphabet")
+        self.__alphabet = value
+
+    def alphabetize(self, i) :
+        if not isinstance(i, int) :
+            raise TypeError("%s not an integer" %(str(i)))
+        return self.__alphabet[i]
+
+    doc_alphabet = "alphabet for representations of permutations in this diagram"
+            
+    alphabet = property(fset = set_alphabet, fget = get_alphabet, doc=doc_alphabet)
+
+
+class ReducedAbelianRauzyDiagram(ReducedRauzyDiagram) :
+    r"""
+    Reduced Rauzy diagram of Abelian permutations.
 
     EXAMPLES:
         sage : d = RauzyDiagram('a b c', 'c b a', reduced = True)
@@ -483,111 +634,34 @@ class AbelianRauzyDiagram(RauzyDiagram) :
     """
     
     def permutation_to_vertex(self, p) :
-        r"""
-        Translation of the reduced Abelian permutation to a vertex
-
-        Vertex storage depends of the type of the permutation. Moreover this
-        storage function should be change in future version.
-
-        INPUT:
-            a ReducedAbelianPermutation
-
-        OUTPUT:
-            a "vertex-typed" object (actually string)
-
-        AUTHORS:
-            - Vincent Delecroix (2008-12-20)
-        """
-        return ' '.join(list(p)[1])
+        return tuple(p._twin[0])
         
 
     def vertex_to_permutation(self, i) :
-        r"""
-        Translation of a vertex indice to a permutation.
-
-        This function invert the permutation_to_vertex one.
-
-        INPUT:
-            an indice of a vertex
-
-        OUTPUT:
-            a ReducedAbelianPermutation
-
-        AUTHOR:
-            - Vincent Delecroix (2008-12-20)
-        """
-        a0 = self._a0.split()
-        a1 = self._permutations[i].split()
-        return ReducedAbelianPermutation([a0,a1])
+        a1 = self._permutations[i]
+        a0 = range(len(a1))
+        alphabet = self.alphabet
+        return ReducedAbelianPermutation([a0,a1], alphabet=alphabet)
 
 
     def vertex_to_str(self, i) :
-        r"""
-        String for the representation of a vertex.
-
-        INPUT:
-            an indice of a vertex
-
-        OUTPUT:
-            a string
-
-        AUTHOR:
-            - Vincent Delecroix (2008-12-20)
-
-        """
-        return self._a0 + "\\n" + self._permutations[i]
+        return ' '.join(self.alphabet) + "\\n" + ' '.join(map(self.alphabetize,self._permutations[i]))
 
 
     def vertex_to_one_line_str(self, i) :
-        r"""
-        One line string for the representation of a vertex.
-
-        INPUT:
-            an indice of a vertex
-
-        OUTPUT:
-            a string
-
-        AUTHOR:
-            - Vincent Delecroix (2008-12-20)
-        """
-        return self._permutations[i]
+        return ' '.join(map(self.alphabetize,self._permutations[i]))
 
 
     def edges_to_str(self, i) :
-        r"""
-        One line string for the representation of a couple of edges (the
-        0-neighbour and the 1-neighbour).
-
-        INPUT:
-            an indice of an edge
-
-        OUTPUT:
-            a string
-
-        AUTHOR:
-            - Vincent Delecroix (2008-12-20)
-        """
         return str(self._neighbours[i])
         
 
     def first_vertex(self, p) :
-        r"""
-        A special intialization before the insertion of the first vertex.
-
-        INPUT:
-            a ReducedAbelianPermutation
-
-        AUTHOR:
-            - Vincent Delecroix (2008-12-20)
-        """
-        self._a0 = ' '.join(list(p)[0])
+        self.alphabet = p.alphabet
 
 
-#####################################################
-###########    QUADRATIC RAUZY DIAGRAM    ###########
-#####################################################
-class ReducedQuadraticRauzyDiagram(RauzyDiagram) :
+
+class ReducedQuadraticRauzyDiagram(ReducedRauzyDiagram) :
     r"""
     Reduced Rauzy diagram of quadratic (or generalized) permutations.
 
@@ -605,93 +679,124 @@ class ReducedQuadraticRauzyDiagram(RauzyDiagram) :
 
     
     def permutation_to_vertex(self, p) :
-        r"""
-        Translation of a reduced quadratic permutation to a vertex
-
-        Vertex storage depends of the type of the permutation. Moreover this
-        storage function should be change in future version.
-
-        INPUT:
-            a ReducedQuadraticPermutation
-
-        OUTPUT:
-            a "vertex-typed" object (actually 2-uple of strings)
-
-        AUTHORS:
-            - Vincent Delecroix (2008-12-20)
-        """
-        l = list(p)
-        return (' '.join(l[0]), ' '.join(l[1]))
+        return (p._twin[0], p._twin[1])
         
 
     def vertex_to_permutation(self, i) :
-        r"""
-        Translation of a vertex indice to a permutation.
+        raise NotImplementedError
 
-        This function invert the permutation_to_vertex one.
 
-        INPUT:
-            an indice of a vertex
-
-        OUTPUT:
-            a ReducedQuadraticPermutation
-
-        AUTHORS:
-            - Vincent Delecroix (2008-12-20)
-        """
-        a0 = self._permutations[i][0].split()
-        a1 = self._permutations[i][1].split()
-        return ReducedQuadraticPermutation([a0,a1])
 
 
     def vertex_to_str(self, i) :
-        r"""
-        String for the representation of a vertex.
-
-        INPUT:
-            an indice of a vertex
-
-        OUTPUT:
-            a string
-
-        AUTHORS:
-            - Vincent Delecroix (2008-12-20)
-
-        """
-        return self._permutations[i][0] + "\\n" + self._permutations[i][1]
+        atwin = alphabetized_qtwin(self._permutations[i], self.alphabet)
+        return ' '.join(atwin[0])  + "\n" + ' '.join(atwin[1])
 
 
     def vertex_to_one_line_str(self, i) :
-        r"""
-        One line string for the representation of a vertex.
-
-        INPUT:
-            an indice of a vertex
-
-        OUTPUT:
-            a string
-
-        AUTHORS:
-            - Vincent Delecroix (2008-12-20)
-        """
-        return str(self._permutations[i])
+        atwin = alphabetized_qtwin(self._permutations[i], self.alphabet)
+        return ' '.join(atwin[0]) + ", " + ' '.join(atwin[1])
 
 
     def edges_to_str(self, i) :
-        r"""
-        One line string for the representation of a couple of edges (the
-        0-neighbour and the 1-neighbour).
-
-        INPUT:
-            an indice of an edge
-
-        OUTPUT:
-            a string
-
-        AUTHORS:
-            - Vincent Delecroix (2008-12-20)
-        """
         return str(self._neighbours[i])
 
     def first_vertex(self, p) :
-        pass
+        self.alphabet = p.alphabet
+
+
+
+class FlippedReducedAbelianRauzyDiagram(ReducedRauzyDiagram):
+    r"""
+    Reduced Rauzy diagram of flipped Abelian permutations.
+
+    EXAMPLES:
+        sage : d = RauzyDiagram('a b c', 'c b a', reduced = True, flips=['a'])
+
+    """
+    
+    def permutation_to_vertex(self, p) :
+        flips = [k for k,_ in filter(lambda (i,j) : j == -1, enumerate(p._flips))]
+        return (p._twin[0], flips)
+
+
+    def vertex_to_permutation(self, i) :
+        raise NotImplementedError
+
+
+    def vertex_to_str(self, i) :
+        str0 = ""
+        str1 = ""
+        flips = map(self.alphabetize, self._permutations[i][1])
+  
+        for letter in self.alphabet :
+            if letter in flips :
+                str0 += "-"+letter+" "
+            else :
+                str0 += " "+letter+" "
+
+        for j in self._permutations[i][0] :
+            letter = self.alphabetize(j)
+            if letter in flips :
+                str1 += "-"+letter+" "
+            else :
+                str1 += " "+letter+" "
+            
+        return str0 + "\\n" + str1
+
+
+    def vertex_to_one_line_str(self, i) :
+        str1 = ""
+        flips = map(self.alphabetize, self._permutations[i][1])
+
+        for j in self._permutations[i][0] :
+            letter = self.alphabetize(j)
+            if letter in flips :
+                str1 += "-"+letter+" "
+            else :
+                str1 += " "+letter+" "
+            
+        return str1
+
+
+    def edges_to_str(self, i) :
+        return str(self._neighbours[i])
+        
+
+    def first_vertex(self, p) :
+        self.alphabet = p.alphabet
+
+
+
+class FlippedReducedQuadraticRauzyDiagram(ReducedRauzyDiagram) :
+    r"""
+    Reduced Rauzy diagram of flipped Abelian permutations.
+
+    EXAMPLES:
+        sage : d = RauzyDiagram('a b c', 'c b a', reduced = True, flips=['a'])
+
+    """
+    def permutation_to_vertex(self, p) :
+        return (p._twin, p._flips)
+
+
+    def vertex_to_permutation(self, i) :
+        raise NotImplementedError
+
+
+    def vertex_to_str(self, i) :
+        atwin = alphabetized_qtwin(self._permutations[i], self.alphabet)
+        return ' '.join(atwin[0]) + "\\n" + ' '.join(atwin[1])
+
+
+    def vertex_to_one_line_str(self, i) :
+        atwin = alphabetized_qtwin(self._permutations[i], self.alphabet)
+        return ' '.join(atwin[0]) + ", " + ' '.join(atwin[1])
+
+
+    def edges_to_str(self, i) :
+        return str(self._neighbours[i])
+        
+
+    def first_vertex(self, p) :
+        self.alphabet = p.alphabet

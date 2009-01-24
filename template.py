@@ -10,7 +10,7 @@ every method here start with the special word 'twin'.
 TODO:
     Construct the inheritance as combinatorial types inclusion
     (to allow stratas manipulations)
-
+    Have an independent flip tableau (to have the same _twin_rauzy_move
 """
 #*****************************************************************************
 #       Copyright (C) 2008 Vincent Delecroix <delecroix@iml.univ-mrs.fr>
@@ -158,8 +158,8 @@ class GeneralizedPermutation(SageObject) :
         self._twin_rauzy_move(winner, loser_to)
         
         if hasattr(self, '_move_data') :
-            self._move_data((winner, -1),
-                           (1-winner, -1),
+            self._move_data((winner, self.length_top() - 1),
+                           (1-winner, self.length_bottom() - 1),
                            loser_to[:2])
 
 
@@ -511,7 +511,8 @@ class QuadraticPermutation(GeneralizedPermutation) :
         loser = 1 - winner
         
         # the same letter at the right-end (False)
-        if self._twin[winner] == (loser, len(self._twin[loser]) - 1) : return False
+        if (self._twin[0][-1][0] == 1) and (self._twin[0][-1][1] == self.length_bottom() - 1) :
+            return False
         
         # the winner (or loser) letter is repeated on the other interval (True)
         if self._twin[winner][-1][0] == loser : return True
@@ -595,149 +596,75 @@ class FlippedGeneralizedPermutation(GeneralizedPermutation) :
         if type(i) == tuple :
             if (len(i) != 2) or (type(i[0]) != int ) : raise IndexError
             return s[i[0]][i[1]]
-    pass
+
+
+    def rauzy_move(self, winner) :
+        loser_to = self._get_loser_to(winner)
+
+        self._flip_rauzy_move(winner, loser_to)
+        self._twin_rauzy_move(winner, loser_to)
+        
+        if hasattr(self, '_move_data') :
+            self._move_data((winner, self.length_top() - 1),
+                           (1-winner, self.length_bottom() - 1),
+                           loser_to)
+
+
+    def _init_flips(self, a, flips):
+        self._flips = [a[0][:],a[1][:]]
+        for k in range(2) :
+            for i,c in enumerate(self._flips[k]) :
+                if c in flips :
+                    flip = -1
+                else :
+                    flip = 1
+                self._flips[k][i] = flip
+
 
 
 
 class FlippedAbelianPermutation(AbelianPermutation, FlippedGeneralizedPermutation) :
     r"""
     General template for all flipped abelian permutation
-
+    
     ...DO NOT USE...
 
     TODO :
-      the _twin list must be implemented with Pyrex (or Cython) as a tableau.
+      the _twin and the _flips lists must be implemented with Pyrex
+      (or Cython) as a tableau.
     """
-
-    def _init_twin(self, a, flips):
-        r"""
-        flips must be a list
-        """
-        self._twin = [a[0][:],a[1][:]]
-        for i in range(len(self._twin[0])) :
-            c = self._twin[0][i]
-            if c in flips : flip = -1
-            else : flip = 1
-            j = self._twin[1].index(c)
-            self._twin[0][i] = [j, flip]
-            self._twin[1][j] = [i, flip]
 
 
     def _get_loser_to(self, winner) :
         r"""
         This function return the position of the future loser position.
         """
-        if self._twin[winner][-1][1] == 1 :
+        if self._flips[winner][-1] == 1 :
             # non flipped winner
-            return (1-winner, self._twin[winner][-1][0]+1, 1)
+            return (1-winner, self._twin[winner][-1]+1)
         else :
             # flipped winner
-            return (1-winner, self._twin[winner][-1][0], -1)
+            return (1-winner, self._twin[winner][-1])
         
 
-    def _twin_rauzy_move(self, winner_interval, loser_to) :
-        r"""
-        Do a Rauzy move (only on the twin_list) for this choice of winner.
-        """
-       
-        loser_interval = 1 - winner_interval
+    def _flip_rauzy_move(self, winner, loser_to) :
+        loser = 1 - winner
 
-        loser_twin_interval = winner_interval
-        loser_twin_position, loser_flip = self._twin[loser_interval][-1]
+        loser_twin_interval, loser_twin_position = winner, self._twin[loser][-1]
+        loser_interval_to, loser_position_to = loser_to
 
-        loser_interval_to, loser_position_to, flip_to = loser_to
-        flip_loser_to = loser_flip * flip_to
+        flip = self._flips[winner][-1] * self._flips[loser][-1]
 
-        # move the loser
-        del self._twin[loser_interval][-1]
-        self._twin[loser_interval_to].insert(loser_position_to, [loser_twin_position, flip_loser_to])
-        self._twin[loser_twin_interval][loser_twin_position] = [loser_position_to, flip_loser_to]
+        self._flips[loser_twin_interval][loser_twin_position] = flip
 
-        # increment the twins of the modified interval
-        for j in range(loser_position_to + 1, self.length(loser_interval_to)) :
-            self._twin[winner_interval][self._twin[loser_interval_to][j][0]][0] += 1
-
+        del self._flips[loser][-1]
+        self._flips[loser_interval_to].insert(loser_position_to, flip)
         
 
-    def is_reducible(self, return_decomposition=False) :
-        r"""
-        Test of reducibility
-
-        An abelian permutation p = (p0,p1) is reducible if
-        the set(p0[:i]) = set(p1[:i]) for an i < len(p0)
-
-        OUTPUT:
-            a boolean
-            
-        EXAMPLE:
-            sage : p = GeneralizedPermutation('a b c', 'c b a')
-            sage : p.is_reducible()
-            False
-
-            sage : p = GeneralizedPermutation('a b c', 'b a c')
-            sage : p.is_reducible()
-            True
-        """
-        s0, s1 = 0, 0
-        for i in range(len(self)-1) :
-            s0 += i
-            s1 += self._twin[0][i][0]
-            if s0 == s1 :
-                if return_decomposition :
-                    return True, (self[0][:i+1], self[0][i+1:], self[1][:i+1], self[1][i+1:])
-                return True
-        if return_decomposition :
-            return False, None
-        return False
-
-
-    def is_rauzy_movable(self, winner=0) :
-        r"""
-        Test of Rauzy movability (with an eventual specified choice of winner)
-
-        An abelian permutation is rauzy_movable with 0 and 1 type
-        simultaneously. But, for compatibility with quadratic permutations, a
-        winner could be specified.
-
-        A Rauzy move can be performed on an abelian permutation if and only the
-        two extremities intervals don't have the same label.
-
-        remark : rauzy_movability implies reducibility
-        
-        INPUT:
-            eventually a winner : 0 or 1
-
-        OUTPUT:
-            a boolean
-
-        EXAMPLES:
-            sage : p = GeneralizedPermutation('a b c', 'c b a')
-            sage : p.is_rauzy_movable()
-            True
-            sage : p.is_rauzy_movable(0)
-            True
-            sage : p.is_rauzy_movable(1)
-            True
-
-            sage : p = GeneralizedPermutation('a b c', 'b a c')
-            sage : p.is_rauzy_movable()
-            False
-            sage : p.is_rauzy_movable(0)
-            False
-            sage : p.is_rauzy_movable(1)
-            False
-
-        AUTHORS:
-            - Vincent Delecroix (2008-12-20)
-        """
-        return self._twin[winner][-1] != len(self._twin[winner]) - 1
 
 
 class FlippedQuadraticPermutation(QuadraticPermutation, FlippedGeneralizedPermutation) :
     """Everything concerning the twin list is here"""
-
-    def _init_twin(self,a,flips):
-        raise NotImplementedError
 
 
     def _get_loser_to(self, winner) :
@@ -749,19 +676,29 @@ class FlippedQuadraticPermutation(QuadraticPermutation, FlippedGeneralizedPermut
         loser = 1 - winner
         
         if self._twin[winner][-1][0] == loser :
-            if self._twin[winner][-1][2] == 1 :
-                return (loser, self._twin[winner][-1][1] + 1, 1)
+            if self._flips[winner][-1] == 1 :
+                return (loser, self._twin[winner][-1][1] + 1)
             else :
-                return (loser, self._twin[winner][-1][1], -1)
+                return (loser, self._twin[winner][-1][1])
         else :
-            if self._twin[winner][-1][2] == 1 :
-                return (winner, self._twin[winner][-1][1], 1)
+            if self._flips[winner][-1] == 1 :
+                return (winner, self._twin[winner][-1][1])
             else :
-                return (loser, self._twin[winner][-1][1] + 1, -1)
+                return (winner, self._twin[winner][-1][1] + 1)
 
 
-    def _twin_rauzy_move(self, winner_interval, loser_to) :
-        raise NotImplementedError
+    def _flip_rauzy_move(self, winner, loser_to) :
+        loser = 1 - winner
+
+        loser_twin_interval, loser_twin_position = self._twin[loser][-1]
+        loser_interval_to, loser_position_to = loser_to
+
+        flip = self._flips[winner][-1] * self._flips[loser][-1]
+
+        self._flips[loser_twin_interval][loser_twin_position] = flip
+
+        del self._flips[loser][-1]
+        self._flips[loser_interval_to].insert(loser_position_to, flip)
 
 
 ##############################
@@ -777,6 +714,7 @@ class RauzyDiagram(SageObject) :
 
         self.complete()
 
+        self._n = len(p)
         self.first_vertex(self._permutations[0])
         self._permutations = map(self.permutation_to_vertex, self._permutations)
 
