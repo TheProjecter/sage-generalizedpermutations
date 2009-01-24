@@ -32,7 +32,7 @@ EXAMPLES:
         a b b
         c c a
 
-    For flips you just have to precise the set of flipped intervals :
+    For flipped permutations, just to precise the set of flipped intervals :
         sage : p1 = GeneralizedPermutation('a b c', 'c b a', flips = ['a','c'])
         -a b -c
         -c b -a
@@ -107,7 +107,6 @@ def GeneralizedPermutation(*args,**kargs):
         intervals -- two strings or a list of two strings or two lists
         (names of intervals) or a list of two lists or one string with form
         (top intervals) \\n (bottom intervals)
-
         flips -- list of letters (defaut: [])
         reduced -- a boolean (defaut: False) which specifies reduction
 
@@ -136,31 +135,29 @@ def GeneralizedPermutation(*args,**kargs):
         c c a
 
     Creation of flipped permutations (Abelian or quadratic)
-        sage : GeneralizedPermutation('a b c', 'c b a', flips = ['a','b'])  # todo: not yet implemented
-        sage : GeneralizedPermutation('a b c', 'c b a', flips = ['a'], reduced = True)  # todo: not yet implemented
+        sage : GeneralizedPermutation('a b c', 'c b a', flips = ['a','b'])
+        sage : GeneralizedPermutation('a b c', 'c b a', flips = ['a'], reduced = True)
 
-    NOTES:
-        flipped permutations are not yet implemented
 
 
         REFERENCES :
-            Corentin Boissy and Erwan Lanneau, "Dynamics and geometry
+            [BL08] Corentin Boissy and Erwan Lanneau, "Dynamics and geometry
             of the Rauzy-Veech induction for quadratic differentials"
             (arxiv:0710.5614)
 
-            Claude Danthony and Arnaldo Nogueira "Measured foliations
+            {DN90] Claude Danthony and Arnaldo Nogueira "Measured foliations
             on nonorientable surfaces", Annales scientifiques de
             l'Ecole Normale Superieure, Ser. 4, 23, no. 3 (1990),
             p 469-494
 
-            Arnaldo Nogueira, "Almost all Interval Exchange
+            [N85] Arnaldo Nogueira, "Almost all Interval Exchange
             Transformations with Flips are Nonergodic" (Ergod. Th. &
             Dyn. Systems, Vol 5., (1985), 257-271
 
-            Anton Zorich, "Generalized Permutation software"
+            [Z] Anton Zorich, "Generalized Permutation software"
             (http://perso.univ-rennes1.fr/anton.zorich)
 
-            Anton Zorich, "Explicit Jenkins-Strebel representatives of
+            [Z08] Anton Zorich, "Explicit Jenkins-Strebel representatives of
             all strata of Abelian and quadratic differentials", Journal
             of Modern Dynamics, 2:1 (2008), 139-185
 
@@ -225,16 +222,27 @@ def GeneralizedPermutation(*args,**kargs):
         flips = []
     else :
         flips = kargs['flips']
-        
-      
+
+
+    if 'alphabet' not in kargs :
+        alphabet = None
+    else :
+        alphabet = kargs['alphabet']
+
+
     # verification of the coherence of a and choose between normal or generalized
     l = a[0] + a[1]
-    alphabet = set(l)
+    letters = set(l)
 
-    for letter in alphabet :
+
+    for letter in flips :
+        if letter not in letters :
+            raise TypeError("The flip list is not valid")
+
+    for letter in letters :
         if l.count(letter) != 2 : raise NoMatchingTwin("Letters must reappear twice")
 
-    for letter in alphabet :
+    for letter in letters :
         if (a[0].count(letter) == 2) or (a[1].count(letter) == 2) :
             generalized = True
             break
@@ -245,7 +253,7 @@ def GeneralizedPermutation(*args,**kargs):
         # check exitence of admissible length
         b0 = a[0][:]
         b1 = a[1][:]
-        for letter in alphabet :
+        for letter in letters :
             if b0.count(letter) == 1 :
                 del b0[b0.index(letter)]
                 del b1[b1.index(letter)]
@@ -254,29 +262,24 @@ def GeneralizedPermutation(*args,**kargs):
             raise NoAdmissibleLength("There is no corresponding length")
 
 
-    # verification of coherence of flips
-    for flip in flips :
-        if flip not in alphabet : raise WrongParameter("flips non element of the alphabet")
-
-
     # repartition to different objects
     if generalized == False :
         if reduction == True :
             if flips == [] :
-                return ReducedAbelianPermutation(a)
+                return ReducedAbelianPermutation(a, alphabet=alphabet)
             else :
-                return FlippedReducedAbelianPermutation(a,flips)
+                return FlippedReducedAbelianPermutation(a,alphabet=alphabet, flips=flips)
         else :
             if flips == [] :
                 return LabeledAbelianPermutation(a)
             else :
-                return FlippedLabeledAbelianPermutation(a,flips)
+                return FlippedLabeledAbelianPermutation(a,flips=flips)
     else :
         if reduction == True :
             if flips == [] :
-                return ReducedQuadraticPermutation(a)
+                return ReducedQuadraticPermutation(a, alphabet=alphabet)
             else :
-                return FlippedReducedQuadraticPermutation(a,flips)
+                return FlippedReducedQuadraticPermutation(a,alphabet=alphabet, flips=flips)
         else :
             if flips == [] :
                 return LabeledQuadraticPermutation(a)

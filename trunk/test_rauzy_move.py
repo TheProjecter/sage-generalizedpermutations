@@ -1,7 +1,10 @@
 import constructor as gp
 
+reduction = ((True,"REDUCED : "),(False,"LABELED : ")) 
 
+#####################
 # ABELIAN PERMUTATION
+#####################
 a_list = (("a b","b a"),
           ("a b c","c b a"),
           ("a b c","b c a"),
@@ -13,32 +16,34 @@ a_r_list = ((("a b","b a"),("a b","b a")),
             (("a b c","c b a"),("a b c","c a b")))
 
 for a,(a0,a1) in zip(a_list, a_r_list) :
-    p = gp.GeneralizedPermutation(a, reduced=True)
+    for r,l in reduction :
+        p = gp.GeneralizedPermutation(a, reduced=r)
 
-    if not p.is_rauzy_movable() :
-        print "ERROR RAUZY MOVABILITY (ABELIAN)"
-        print p
+        if not p.is_rauzy_movable() :
+            print l + "ERROR RAUZY MOVABILITY (ABELIAN)"
+            print p
         
-    p.rauzy_move(0)
-    p0 = gp.GeneralizedPermutation(a0, reduced=True)
+        p.rauzy_move(0)
+        p0 = gp.GeneralizedPermutation(a0, reduced=r)
     
-    if p != p0 :
-        print "R0 ERROR"
-        print p
-        print "\n",p0
+        if p != p0 :
+            print l + "R0 ERROR"
+            print p
+            print "\n",p0
 
 
-    p = gp.GeneralizedPermutation(a, reduced=True)
-    p.rauzy_move(1)
-    p1 = gp.GeneralizedPermutation(a1, reduced=True)
+        p = gp.GeneralizedPermutation(a, reduced=r)
+        p.rauzy_move(1)
+        p1 = gp.GeneralizedPermutation(a1, reduced=r)
 
-    if p != p1 :
-        print "R1 ERROR"
-        print p
-        print "\n",p1
+        if p != p1 :
+            print l + "R1 ERROR"
+            print p
+            print "\n",p1
             
-
+#######################
 # QUADRATIC PERMUTATION
+#######################
 a_list = {}
 a_r_list = {}
 
@@ -70,7 +75,6 @@ a_r_list_01 = ((("a a b b","c c"),("a b b","c c a")),(("a a b","b c c"),("a a","
                  (("1 1 2","3 3 4 2 4"),("1 1","3 3 2 4 2 4"))
                  )
 
-reduction = ((True,"REDUCED : "),(False,"LABELED : ")) 
 
 # ONLY 0
 for a,a0 in zip(a_list_0, a_r_list_0) :
@@ -126,3 +130,43 @@ for a,(a0,a1) in zip(a_list_01, a_r_list_01) :
             print a, " -> ", a1
             print p
     
+#############################
+# FLIPPED ABELIAN PERMUTATION
+#############################
+a_list = ((("a b","b a"), ['a']),
+          (("a b c","c b a"), ['a','c']),
+          (("a b c","b c a"), ['a']),
+          (("a b c","c a b"), ['a'])
+          )
+
+a_r_list = (((("a b","b a"), ['a']), (("b a","b a"), ['a','b'])),
+            ((("a b c","a c b"), ['c']), (("c a b","c b a"), ['a'])),
+            ((("a b c","b c a"), ['a']), (("c a b","b c a"), ['a','c'])),
+            ((("a b c","c b a"), ['a']), (("a b c","c a b"), ['a'])))
+
+for (a,flips), ((a0,flips0),(a1,flips1)) in zip(a_list, a_r_list) :
+    for r,l in reduction :
+        p = gp.GeneralizedPermutation(a, reduced=r, flips=flips)
+    
+        if not p.is_rauzy_movable() :
+            print l + "ERROR RAUZY MOVABILITY (FLIPPED ABELIAN)"
+            print p
+        
+        p.rauzy_move(0)
+        p0 = gp.GeneralizedPermutation(a0, reduced=r, flips=flips0)
+    
+        if p != p0 :
+            print l + "R0 ERROR"
+            print p
+            print "\n",p0
+
+
+        p = gp.GeneralizedPermutation(a, reduced=r, flips=flips)
+        p.rauzy_move(1)
+        p1 = gp.GeneralizedPermutation(a1, reduced=r, flips=flips1)
+
+        if p != p1 :
+            print l + "R1 ERROR"
+            print p
+            print "\n",p1
+            

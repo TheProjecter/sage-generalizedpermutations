@@ -359,15 +359,16 @@ class FlippedLabeledPermutation(LabeledPermutation) :
         self._intervals = [a[0][:], a[1][:]]
 
         self._twin = [[],[]]
-        self._init_twin(a,flips)
+        self._init_twin(a)
+        self._init_flips(a,flips)
 
 
     def __list__(self) :
         r"""
         the permutations as a list of two lists
         """
-        a0 = zip(self._intervals[0], [flip for _,flip in self._twin[0]])
-        a1 = zip(self._intervals[1], [flip for _,flip in self._twin[1]])
+        a0 = zip(self._intervals[0], self._flips[0])
+        a1 = zip(self._intervals[1], self._flips[1])
         return [a0,a1]
 
 
@@ -376,7 +377,7 @@ class FlippedLabeledPermutation(LabeledPermutation) :
         Test of equality
 
         """
-        return (self._intervals == other._intervals) and (self._twin == other._twin)
+        return (self._intervals == other._intervals) and (self._flips == other._flips)
 
    
     def __ne__(self,other) :
@@ -386,22 +387,8 @@ class FlippedLabeledPermutation(LabeledPermutation) :
         AUTHORS:
             - Vincent Delecroix (2008-12-20)
         """
-        return (self._intervals != other._intervals) or (self._twin != other._twin)
+        return (self._intervals != other._intervals) or (self._flips != other._flips)
 
-
-    def _move_data(self, winner, loser, loser_to) :
-        r"""
-        Modification of data.
-
-        Called from GeneralizedPermutation::rauzy_move.
-        
-        INPUT:
-            winner -- 2-uple (winner_interval, winner_position)
-            loser -- 2-uple (loser_interval, loser_position)
-            loser_to -- 2-up (loser_interval_to, loser_position_to)
-        """
-        loser_letter = self._intervals[loser[0]].pop()
-        self._intervals[loser_to[0]].insert(loser_to[1], loser_letter)
 
 
 class FlippedLabeledAbelianPermutation(FlippedAbelianPermutation, FlippedLabeledPermutation) :
