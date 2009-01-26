@@ -1,7 +1,6 @@
 r"""
 General template for different types of generalized permutations and Rauzy diagrams
 
-
 Here is the main file concerning the storage of general permutations. It's useful
 for each of the type reduced or labeled. Because it's almost the same thing. Almost
 every method here start with the special word 'twin'.
@@ -11,6 +10,17 @@ TODO:
     Construct the inheritance as combinatorial types inclusion
     (to allow stratas manipulations)
     Have an independent flip tableau (to have the same _twin_rauzy_move
+
+    Wrap the twin : not access 'directly' to it (it will be defined in C later).
+
+    Strata and Stratas types (derived from Partition)
+
+    Everybody must have a parent (very useful for alphabet..., we look for an
+    alphabet in each parent).
+
+    parent here means RauzyDiagram, Strata, ReducedPermutation, ....
+
+    define what self.__list__ must do
 """
 #*****************************************************************************
 #       Copyright (C) 2008 Vincent Delecroix <delecroix@iml.univ-mrs.fr>
@@ -19,8 +29,18 @@ TODO:
 #                  http://www.gnu.org/licenses/
 #*****************************************************************************
 
+from string import replace
+
 from sage import SageObject
 #from sage.structure.sage_object import SageObject
+
+
+defaut_alphabet = Alphabet("123456789")
+# this defaut alphabet must be an infinite alphabet which permit a universal
+# numerotation.
+# For bilabels we need something like A x {0,1} and consider special numerotation
+# with this.
+# think about alphabetize.
 
 
 def is_GeneralizedPermutation(obj):
@@ -38,9 +58,8 @@ def is_GeneralizedPermutation(obj):
 
 class GeneralizedPermutation(SageObject) :
     r"""
-    General template for all types
+    General template for all types of GeneralizedPermutation.
     """
-
     def __repr__(self) :
         l = list(self)
         return ' '.join(map(str,l[0])) + "\n" + ' '.join(map(str,l[1]))
@@ -86,6 +105,7 @@ class GeneralizedPermutation(SageObject) :
             3
         """
         return len(self._twin[1])
+
 
     def length(self, interval=None) :
         r"""
@@ -163,7 +183,6 @@ class GeneralizedPermutation(SageObject) :
                            loser_to[:2])
 
 
-
 def is_AbelianPermutation(obj):
     r"""
     Returns true if obj is an Abelian Permutation.
@@ -191,13 +210,24 @@ class AbelianPermutation(GeneralizedPermutation) :
     AUTHORS:
         - Vincent Delecroix (2008-12-20)
     """
-    def _init_twin(self,a):
+    def _init_twin(self, a=None):
+        if a is None : a = [[],[]]
+
         self._twin = [a[0][:],a[1][:]]
         for i in range(len(self._twin[0])) :
             c = self._twin[0][i]
             j = self._twin[1].index(c)
             self._twin[0][i] = j
             self._twin[1][j] = i
+
+
+    def _init_alphabet(self,a) :
+        r"""
+        Create an alphabet from a interval list and assign it to 
+        self._alphabet.
+        """
+        
+        self._alphabet = Alphabet(a[0])
 
 
     def _get_loser_to(self, winner) :
@@ -376,6 +406,21 @@ class QuadraticPermutation(GeneralizedPermutation) :
 
         self._twin[0] = l[0]
         self._twin[1] = l[1]
+
+
+    def _init_alphabet(self, intervals) :
+        r"""
+        Intialization procedure of the alphabet of self from intervals list
+        
+        assignement to self._alphabet.
+        """
+        tmp_alphabet = []
+        for letter in intervals[0] + intervals[1] :
+            if letter not in tmp_alphabet :
+                tmp_alphabet.append(letter)
+
+        self._alphabet = Alphabet(tmp_alphabet)
+
 
 
     def is_reducible(self, return_decomposition=False) :
@@ -817,6 +862,52 @@ class RauzyDiagram(SageObject) :
             return len(self._permutations) - 1
 
 
+    def vertex_to_permutation(self, i) :
+        r"""
+        The defaut implementation.
+
+        All the permutation is stored.
+        """
+        return self._permutations[i][0]
+
+
+    def permutation_to_vertex(self, p) :
+        r"""
+        The defaut implementation (store all)
+        """
+        return p
+
+
+    def vertex_to_str(self, i) :
+        r"""
+        Generic algorithm.
+
+        This implementation use the str method of permutation.
+        """
+        return str(self._permutations[i])
+
+
+    def vertex_to_one_line_str(self, i) :
+        r"""
+        The defaut implementation
+
+        This implemenetation use the str method of the permutation. And
+        replace all new lines strings by a space
+        """
+        return replace(str(self._permutations[i]), "\n", ", ")
+
+
+    def edges_to_str(self, i) :
+        r"""
+        The defaut implementation.
+        """
+        return str(self._neighbours[i])
+
+
+    def first_vertex(self,p):
+        pass
+
+
     def dot(self,
             edge0_label = "", edge0_style = "dotted",
             edge1_label = "", edge1_style = "bold",
@@ -915,4 +1006,49 @@ class RauzyDiagram(SageObject) :
 
         return s
 
+
+
+class FlippedRauzyDiagram(RauzyDiagram) :
+    r"""
+    Generic class for flipped Rauzy Diagram.
+
+    The main difference is that is possible to exclude reducible
+    permutations of our graph.
+    """
+
+    def complete(self, reducible=False) :
+        r"""
+        Completion of the Rauzy diagram.
+
+
+        INPUT:
+            reducible -- (defaut: False) allow or not reducible permutations.
+        A Rauzy diagram is the reunion of all permutations that could be
+        obtained with successive rauzy moves. This function just use the
+        functions __getitem__ and is_rauzy_movable and rauzy_move which must
+        be defined for child and their corresponding permutation types.
+
+        AUTHORS:
+            - Vincent Delecroix (2008-12-20)
+        """
+        i = 0
+        N = len(self._permutations)
+
+        while i < N :
+            p = self._permutations[i]
+
+            for t in (0,1) :
+                if p.is_rauzy_movable(t) :
+                    q = p.copy()
+                    q.rauzy_move(t)
+                    if (reducible == True) or not q.is_reducible() :
+                        j = self.add_vertex(q)
+                        self._neighbours[i][t] = j
+                    else :
+                        self._neighbours[i][t] = -2
+                else :
+                    self._neighbours[i][t] = -1
+                
+            i += 1
+            N = len(self._permutations)
 

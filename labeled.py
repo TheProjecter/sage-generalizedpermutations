@@ -29,7 +29,31 @@ Definition of labeled type permutation
         sage : s = d.path_to_substitution(0,0,1,0,1)
         sage : m = d.path_to_matrix(0,0,1,0,1)
 
+    TODO:
+       insert an alphabet in the definition and consider just alphabet for
+       representation (and use a defaut alphabet otherwise).
+       (add a parameter construct_alphabet_from_intervals in the constructor
+       We must permit 
+          uncomplete labelization (two intervals could have the same name)
+          bilabeled permutations (all labels distincts. Useful for codage of 
+       linear involutions).
+       Morevoer the presence of an alphabet will be useful for the
+       WordMorphism definition.
+
+       Think about the roles of __list__ and __repr__...
+
+       We must be able to interact on the numerotation of intervals in twice
+       manner :
+          change the alphabet
+          change the labelization
+       But there will be a problem for bilabellization
+
+       For labeled Abelian Rauzy Diagram the storage is clear : the upper interval is 
+       not important
 """
+
+
+from string import replace
 
 from sage import SageObject
 #from sage.structure.sage_object import SageObject
@@ -40,10 +64,11 @@ from sage import WordMorphism
 from sage import Matrix, identity_matrix
 #from sage.matrix.constructor import Matrix, identity_matrix
 
+
+
 from template import AbelianPermutation, QuadraticPermutation
 from template import FlippedAbelianPermutation, FlippedQuadraticPermutation
-from template import RauzyDiagram
-
+from template import RauzyDiagram, FlippedRauzyDiagram
 
 
 
@@ -51,14 +76,16 @@ class LabeledPermutation(SageObject):
     r"""
     General template for labeled objects
 
-    ...NOT FOR USAGE...
+    ...DO NOT USE...
     """
 
     def __init__(self, a) :
         self._intervals = [a[0][:], a[1][:]]
 
         self._twin = [[],[]]
+
         self._init_twin(a)
+        self._init_alphabet(a)
 
 
     def __list__(self) :
@@ -66,13 +93,13 @@ class LabeledPermutation(SageObject):
         the permutations as a list of two lists
 
         EXAMPLES:
-        sage : p = GeneralizedPermutation('a b c', 'c b a')
-        sage : list(p)
-        [['a', 'b', 'c'], ['c', 'b', 'a']]
-
-        sage : p = GeneralizedPermutation('a b b', 'c c a')
-        sage : list(p)
-        [['a', 'b', 'c'], ['c', 'c', 'a']]
+            sage : p = GeneralizedPermutation('a b c', 'c b a')
+            sage : list(p)
+            [['a', 'b', 'c'], ['c', 'b', 'a']]
+            
+            sage : p = GeneralizedPermutation('a b b', 'c c a')
+            sage : list(p)
+            [['a', 'b', 'c'], ['c', 'c', 'a']]
 
         AUTHORS:
             - Vincent Delecroix (2008-12-20)
@@ -124,7 +151,7 @@ class LabeledPermutation(SageObject):
         self._intervals[loser_to[0]].insert(loser_to[1], loser_letter)
 
 
-class LabeledAbelianPermutation(AbelianPermutation, LabeledPermutation) :
+class LabeledAbelianPermutation(LabeledPermutation, AbelianPermutation) :
     r"""
     labeled Abelian permutation
 
@@ -246,7 +273,7 @@ class LabeledAbelianPermutation(AbelianPermutation, LabeledPermutation) :
 ##############    QUADRATIC LABELED PERMUTATIONS    #################
 #####################################################################
 
-class LabeledQuadraticPermutation(QuadraticPermutation, LabeledPermutation) :
+class LabeledQuadraticPermutation(LabeledPermutation, QuadraticPermutation) :
     r"""
     labeled quadratic (or generalized) permutation
 
@@ -327,8 +354,6 @@ class LabeledQuadraticPermutation(QuadraticPermutation, LabeledPermutation) :
        
 
 
-
-
     def rauzy_diagram(self) :
         r"""
         Create the Rauzy diagram associated with this permutation
@@ -355,7 +380,7 @@ class FlippedLabeledPermutation(LabeledPermutation) :
     ...NOT FOR USAGE...
     """
 
-    def __init__(self, a, flips) :
+    def __init__(self, a, flips=[]) :
         self._intervals = [a[0][:], a[1][:]]
 
         self._twin = [[],[]]
@@ -391,12 +416,173 @@ class FlippedLabeledPermutation(LabeledPermutation) :
 
 
 
-class FlippedLabeledAbelianPermutation(FlippedAbelianPermutation, FlippedLabeledPermutation) :
-    pass
+class FlippedLabeledAbelianPermutation(FlippedLabeledPermutation, FlippedAbelianPermutation) :
+    r"""
+    labeled Abelian permutation
+
+    EXAMPLES:
+        Reducibility testing :
+        sage : p = GeneralizedPermutation('a b c', 'c b a')
+        sage : p.is_reducible()
+        False
+
+        sage : q = GeneralizedPermutation('a b c d', 'b a d c')
+        sage : q.is_reducible()
+        True
 
 
-class FlippedLabeledQuadraticPermutation(FlippedQuadraticPermutation, FlippedLabeledPermutation) :
-    pass
+        Rauzy movability and Rauzy move :
+        sage : p = GeneralizedPermutation('a b c', 'c b a')
+        sage : p.is_rauzy_movable(0)
+        True
+        sage : p.rauzy_move(1)
+        sage : p
+        a b c
+        c a b
+        sage : p.is_rauzy_movable(0)
+        True
+        sage : p.rauzy_move(0)
+        sage : p
+        a b c
+        c b a
+
+
+        Rauzy diagrams
+        sage : p = GeneralizedPermutation('a b c', 'c b a')
+        sage : p.rauzy_diagram()
+         0 : ('a b c', 'c b a')  [1, 2]
+         1 : ('a b c', 'c a b')  [0, 1]
+         2 : ('a c b', 'c b a')  [2, 0]
+
+    AUTHORS:
+        - Vincent Delecroix (2008-12-20)
+    """
+
+    def copy(self) :
+        r"""
+        Do a copy of the Abelian permutation.
+
+        EXAMPLES:
+            sage : p = GeneralizedPermutation('a b c', 'c b a')
+            sage : q = p.copy()
+            sage : p == q
+            True
+            sage : p.rauzy_move(0)
+            sage : p == q
+            False
+
+        AUTHORS:
+            - Vincent Delecroix (2008-12-20)
+        """
+        p = FlippedLabeledAbelianPermutation(([],[]))
+        p._twin[0].extend(self._twin[0])
+        p._twin[1].extend(self._twin[1])
+        p._flips[0].extend(self._flips[0])
+        p._flips[1].extend(self._flips[1])
+        p._intervals[0].extend(self._intervals[0])
+        p._intervals[1].extend(self._intervals[1])
+        return p
+
+
+    def rauzy_move_substitution(self, winner) :
+        r"""
+        Consider the operation done on the codage (a WordMorphism)
+        corresponding to a RauzyMove
+        
+        INPUT:
+            a winner interval : it's must be 0 (for top) or 1 (for bottom)
+
+        OUTPUT:
+            a WordMorphism
+
+        EXAMPLES:
+            sage : p = GeneralizedPermutation('a b c', 'c b a')
+            sage : s0 = p.rauzy_move_substitution(0)
+            sage : p.rauzy_move(0)
+            sage : s1 = p.rauzy_move_substitution(1)
+            sage : p.rauzy_move(1)
+            sage : s = s0 * s1
+        """
+        loser = 1 - winner
+
+        loser_letter = self._intervals[loser][-1]
+
+        up_letter = self._intervals[0][-1]
+        down_letter = self._intervals[1][-1]
+
+        d = dict([(letter,letter) for letter in self._intervals[0]])
+        d[loser_letter] = down_letter + up_letter
+
+        return WordMorphism(d)
+
+        
+    def rauzy_diagram(self) :
+        r"""
+        Create the Rauzy diagram associated with this permutation
+
+        OUTPUT :
+            a RauzyDiagram
+
+        EXAMPLES :
+            sage : p = GeneralizedPermutation('a b c', 'c b a')
+            sage : d = p.rauzy_diagram()
+            sage : d
+            0 : ('a b c',' c b a')  [1, 2]
+            1 : ('a b c', 'c a b')  [0, 1]
+            2 : ('a c b', 'c b a')  [2, 0]
+
+        For more information, try help RauzyDiagram
+        """
+        return FlippedLabeledAbelianRauzyDiagram(self)
+
+
+class FlippedLabeledQuadraticPermutation(FlippedLabeledPermutation, FlippedQuadraticPermutation) :
+
+    def copy(self) :
+        r"""
+        Do a copy of the Abelian permutation.
+
+        EXAMPLES:
+            sage : p = GeneralizedPermutation('a b c', 'c b a')
+            sage : q = p.copy()
+            sage : p == q
+            True
+            sage : p.rauzy_move(0)
+            sage : p == q
+            False
+
+        AUTHORS:
+            - Vincent Delecroix (2008-12-20)
+        """
+        p = FlippedLabeledQuadraticPermutation(([],[]))
+        p._twin[0].extend(self._twin[0])
+        p._twin[1].extend(self._twin[1])
+        p._flips[0].extend(self._flips[0])
+        p._flips[1].extend(self._flips[1])
+        p._intervals[0].extend(self._intervals[0])
+        p._intervals[1].extend(self._intervals[1])
+        return p
+
+        
+    def rauzy_diagram(self) :
+        r"""
+        Create the Rauzy diagram associated with this permutation
+
+        OUTPUT :
+            a RauzyDiagram
+
+        EXAMPLES :
+            sage : p = GeneralizedPermutation('a b c', 'c b a')
+            sage : d = p.rauzy_diagram()
+            sage : d
+            0 : ('a b c',' c b a')  [1, 2]
+            1 : ('a b c', 'c a b')  [0, 1]
+            2 : ('a c b', 'c b a')  [2, 0]
+
+        For more information, try help RauzyDiagram
+        """
+        return FlippedRauzyDiagram(self)
+
 
 ##################################
 #####     RAUZY DIAGRAMS     #####
@@ -421,49 +607,49 @@ class LabeledRauzyDiagram(SageObject) :
 
         Vertex storage depends of the type of the permutation. Moreover this
         storage function should be change in future version.
-
+        
         INPUT:
-            a labeled Permutation
-
+        a labeled Permutation
+        
         OUTPUT:
-            a "vertex-typed" object (actually a 2-uple of strings)
-
-        AUTHORS:
-            - Vincent Delecroix (2008-12-20)
-        """     
+        a "vertex-typed" object (actually a 2-uple of strings)
+        
+         AUTHORS:
+         - Vincent Delecroix (2008-12-20)
+         """     
         l = list(p)
         return (' '.join(l[0]),' '.join(l[1]))
-
+    
 
     def vertex_to_str(self, i) :
         r"""
         String for the representation of a vertex.
 
         INPUT:
-            i -- indice of a vertex
-
+        i -- indice of a vertex
+        
         OUTPUT:
-            a string
-
+        a string
+        
         AUTHOR:
-            - Vincent Delecroix (2008-12-20)
-        """
+             - Vincent Delecroix (2008-12-20)
+             """
         return self._permutations[i][0] + "\\n" + self._permutations[i][1]
-
-
+    
+    
     def vertex_to_one_line_str(self, i) :
         r"""
         One line string for the representation of a vertex.
-
+        
         INPUT:
             i -- an indice of a vertex
-
+        
         OUTPUT:
             a string
-
+        
         AUTHOR:
             - Vincent Delecroix (2008-12-20)
-        """
+         """
         return str(self._permutations[i])
 
 
@@ -471,7 +657,7 @@ class LabeledRauzyDiagram(SageObject) :
         r"""
         One line string for the representation of a couple of edges (the
         0-neighbour and the 1-neighbour).
-
+        
         INPUT:
             i -- an indice of an edge
 
@@ -479,7 +665,7 @@ class LabeledRauzyDiagram(SageObject) :
             a string
 
         AUTHOR:
-            - Vincent Delecroix (2008-12-20)
+             - Vincent Delecroix (2008-12-20)
         """
         return str(self._neighbours[i])
 
@@ -630,7 +816,7 @@ class LabeledRauzyDiagram(SageObject) :
         return self.path_composition(args, self.edge_to_matrix)
 
         
-class LabeledAbelianRauzyDiagram(RauzyDiagram, LabeledRauzyDiagram) :
+class LabeledAbelianRauzyDiagram(LabeledRauzyDiagram, RauzyDiagram) :
     r"""
     Labeled Rauzy diagram of abelian permutations.
 
@@ -685,7 +871,7 @@ class LabeledAbelianRauzyDiagram(RauzyDiagram, LabeledRauzyDiagram) :
 
 
 
-class LabeledQuadraticRauzyDiagram(RauzyDiagram, LabeledRauzyDiagram) :
+class LabeledQuadraticRauzyDiagram(LabeledRauzyDiagram, RauzyDiagram) :
     r"""
     Labeled Rauzy diagram of quadratic permutations.
 
@@ -747,3 +933,18 @@ class LabeledQuadraticRauzyDiagram(RauzyDiagram, LabeledRauzyDiagram) :
         a0 = self._permutations[i][0].split()
         a1 = self._permutations[i][1].split()
         return LabeledQuadraticPermutation([a0,a1])
+
+
+
+########
+## FLIP
+
+class FlippedLabeledRauzyDiagram(FlippedRauzyDiagram, LabeledRauzyDiagram) :
+    def first_vertex(self,p):
+        pass
+
+class FlippedLabeledAbelianRauzyDiagram(FlippedLabeledRauzyDiagram) :
+    pass
+
+class FlippedLabeledQuadraticRauzyDiagram(FlippedLabeledRauzyDiagram) :
+    pass
