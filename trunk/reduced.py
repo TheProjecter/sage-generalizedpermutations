@@ -16,9 +16,12 @@ from sage import SageObject
 Alphabet = tuple
 #from sage.combinat.words.alphabet import Alphabet
 
+
 from template import AbelianPermutation, QuadraticPermutation
 from template import FlippedAbelianPermutation, FlippedQuadraticPermutation
-from template import RauzyDiagram
+from template import RauzyDiagram, FlippedRauzyDiagram
+
+
 
 
 class ReducedPermutation(SageObject) :
@@ -28,7 +31,7 @@ class ReducedPermutation(SageObject) :
     ...DO NOT USE...
     """
 
-    def __init__(self, intervals=[[],[]], alphabet = None) :
+    def __init__(self, intervals=None, alphabet=None) :
         r"""
         Constructor of ReducedPermutation.
 
@@ -38,6 +41,8 @@ class ReducedPermutation(SageObject) :
             initialize an Alphabet  or None. In this latter case, the
             letter of intervals are used to generate an alphabet.
         """
+        if intervals is None : intervals = [[],[]]
+
         self._twin = [[],[]]
 
 
@@ -52,15 +57,23 @@ class ReducedPermutation(SageObject) :
             self._alphabet = Alphabet(alphabet)
             if len(alphabet) < len(self) : raise TypeError("The alphabet is too short")
         
-        self._alphabetize = lambda i : self._alphabet[i]
+        self.alphabetize = lambda i : self._alphabet[i]
 
 
+#TODO:    def alphabetize(self) :
+# if there is no _alphabet : just use a standard alphabet
+# it there is just rank it.
+
+       
 
     def get_alphabet(self) :
         r"""
         Return the alphabet.
         """
-        return self._alphabet
+        if hasattr(self, '_alphabet') :
+            return self._alphabet
+        else :
+            return defaut_alphabet
         
 
     def set_alphabet(self,l) :
@@ -171,16 +184,12 @@ class ReducedAbelianPermutation(ReducedPermutation, AbelianPermutation):
         return p
 
     
-    def _init_alphabet(self,a) :
-        self._alphabet = Alphabet(a[0])
-
-
     def __list__(self) :
         r"""
         Mutation of the permutation to a list of two lists.
         """
-        a0 = map(self._alphabetize, range(0,len(self)))
-        a1 = map(self._alphabetize, self._twin[1])
+        a0 = map(self.alphabetize, range(0,len(self)))
+        a1 = map(self.alphabetize, self._twin[1])
         return [a0,a1]
         
 
@@ -227,7 +236,7 @@ class ReducedAbelianPermutation(ReducedPermutation, AbelianPermutation):
         q = ReducedAbelianPermutation(("",""))
         q._twin = [self._twin[0][:], self._twin[1][:]]
         q._alphabet = self._alphabet
-        q._alphabetize = lambda i : self._alphabet[i]
+        q.alphabetize = lambda i : self._alphabet[i]
 
         return q
         
@@ -278,7 +287,7 @@ def numerized_qflips(twin, flips) :
     r"""
     Return a list of flips as numbers.
     """
-    ntwin = alphabetized_qtwin(twin, [1,2,3,4,5,6,7,8,9])  # TO MODIFY !!!
+    ntwin = alphabetized_qtwin(twin, range(1,20))  # TO MODIFY !!!
     l = []
     for interval in (0,1) :
         for j,flip in enumerate (self._flips[i]):
@@ -372,16 +381,6 @@ class ReducedQuadraticPermutation(ReducedPermutation, QuadraticPermutation):
         p._alphabet = self._alphabet
         return p
 
-    def _init_alphabet(self,a) :
-        r"""
-        Intialization procedure of the alphabet of self
-        """
-        tmp_alphabet = []
-        for letter in a[0]+a[1] :
-            if letter not in tmp_alphabet :
-                tmp_alphabet.append(letter)
-
-        self._alphabet = tuple(tmp_alphabet)
 
 
     def __list__(self) :
@@ -473,14 +472,14 @@ class FlippedReducedPermutation(ReducedPermutation) :
         if alphabet == None : self._init_alphabet(intervals)
         else : self._alphabet = alphabet
         
-        self._alphabetize = lambda i : self._alphabet[i]
+        self.alphabetize = lambda i : self._alphabet[i]
 
         self._init_twin(intervals)
         self._init_flips(intervals, flips)
 
 
 
-class FlippedReducedAbelianPermutation(FlippedAbelianPermutation, FlippedReducedPermutation) :
+class FlippedReducedAbelianPermutation(FlippedReducedPermutation, FlippedAbelianPermutation) :
     r"""
     Flipped Reduced Abelian Permutation.
 
@@ -507,8 +506,8 @@ class FlippedReducedAbelianPermutation(FlippedAbelianPermutation, FlippedReduced
         r"""
         Mutation of the permutation in a list of two lists
         """
-        a0 = zip(map(self._alphabetize, range(0,len(self))), self._flips[0])
-        a1 = zip(map(self._alphabetize, self._twin[1]), self._flips[1])
+        a0 = zip(map(self.alphabetize, range(0,len(self))), self._flips[0])
+        a1 = zip(map(self.alphabetize, self._twin[1]), self._flips[1])
         return [a0,a1]
 
     
@@ -537,7 +536,7 @@ class FlippedReducedAbelianPermutation(FlippedAbelianPermutation, FlippedReduced
         return FlippedReducedAbelianRauzyDiagram(self)
 
 
-class FlippedReducedQuadraticPermutation(FlippedQuadraticPermutation, FlippedReducedPermutation) :
+class FlippedReducedQuadraticPermutation(FlippedReducedPermutation, FlippedQuadraticPermutation) :
     r"""
     Flipped Reduced Quadratic Permutation.
     """
@@ -551,8 +550,8 @@ class FlippedReducedQuadraticPermutation(FlippedQuadraticPermutation, FlippedRed
         for i in range(2) :
             for j in range(len(l[i])) :
                if  l[i][j] == False :
-                    l[i][j] = (self._alphabetize(i_a), self._flips[i][j])
-                    l[self._twin[i][j][0]][self._twin[i][j][1]] = (self._alphabetize(i_a), self._flips[i][j])
+                    l[i][j] = (self.alphabetize(i_a), self._flips[i][j])
+                    l[self._twin[i][j][0]][self._twin[i][j][1]] = (self.alphabetize(i_a), self._flips[i][j])
                     i_a += 1
         return l
 
@@ -596,7 +595,7 @@ class FlippedReducedQuadraticPermutation(FlippedQuadraticPermutation, FlippedRed
 ###################################################
 #############    RAUZY DIAGRAMS    ################
 ###################################################
-class ReducedRauzyDiagram(RauzyDiagram) :
+class ReducedRauzyDiagram(SageObject) :
     r"""
     """
     def get_alphabet(self) :
@@ -618,7 +617,7 @@ class ReducedRauzyDiagram(RauzyDiagram) :
     alphabet = property(fset = set_alphabet, fget = get_alphabet, doc=doc_alphabet)
 
 
-class ReducedAbelianRauzyDiagram(ReducedRauzyDiagram) :
+class ReducedAbelianRauzyDiagram(ReducedRauzyDiagram, RauzyDiagram) :
     r"""
     Reduced Rauzy diagram of Abelian permutations.
 
@@ -661,7 +660,7 @@ class ReducedAbelianRauzyDiagram(ReducedRauzyDiagram) :
 
 
 
-class ReducedQuadraticRauzyDiagram(ReducedRauzyDiagram) :
+class ReducedQuadraticRauzyDiagram(ReducedRauzyDiagram, RauzyDiagram) :
     r"""
     Reduced Rauzy diagram of quadratic (or generalized) permutations.
 
@@ -686,8 +685,6 @@ class ReducedQuadraticRauzyDiagram(ReducedRauzyDiagram) :
         raise NotImplementedError
 
 
-
-
     def vertex_to_str(self, i) :
         atwin = alphabetized_qtwin(self._permutations[i], self.alphabet)
         return ' '.join(atwin[0])  + "\n" + ' '.join(atwin[1])
@@ -706,7 +703,8 @@ class ReducedQuadraticRauzyDiagram(ReducedRauzyDiagram) :
 
 
 
-class FlippedReducedAbelianRauzyDiagram(ReducedRauzyDiagram):
+
+class FlippedReducedAbelianRauzyDiagram(ReducedRauzyDiagram, FlippedRauzyDiagram):
     r"""
     Reduced Rauzy diagram of flipped Abelian permutations.
 
@@ -716,7 +714,7 @@ class FlippedReducedAbelianRauzyDiagram(ReducedRauzyDiagram):
     """
     
     def permutation_to_vertex(self, p) :
-        flips = [k for k,_ in filter(lambda (i,j) : j == -1, enumerate(p._flips))]
+        flips = [k for k,_ in filter(lambda (i,j) : j == -1, enumerate(p._flips[0]))]
         return (p._twin[0], flips)
 
 
@@ -768,7 +766,7 @@ class FlippedReducedAbelianRauzyDiagram(ReducedRauzyDiagram):
 
 
 
-class FlippedReducedQuadraticRauzyDiagram(ReducedRauzyDiagram) :
+class FlippedReducedQuadraticRauzyDiagram(ReducedRauzyDiagram, FlippedRauzyDiagram) :
     r"""
     Reduced Rauzy diagram of flipped Abelian permutations.
 
@@ -784,14 +782,26 @@ class FlippedReducedQuadraticRauzyDiagram(ReducedRauzyDiagram) :
         raise NotImplementedError
 
 
-    def vertex_to_str(self, i) :
-        atwin = alphabetized_qtwin(self._permutations[i], self.alphabet)
-        return ' '.join(atwin[0]) + "\\n" + ' '.join(atwin[1])
+    def vertex_to_all_str(self, i, separator=" ") :
+        s = ["",""]
+        atwin = alphabetized_qtwin(self._permutations[i][0], self.alphabet)
+        flips = self._permutations[i][1]
+        for k in (0,1) :
+            for letter,flip in zip(atwin[k], flips[k]) :
+                if flip == 1 :
+                    s[k] += " "+letter+" "
+                else :
+                    s[k] += "-"+letter+" "
+                    
+            
+        return s[0] + separator + s[1]
 
+
+    def vertex_to_str(self, i) :
+        return self.vertex_to_all_str(i, "\\n")
 
     def vertex_to_one_line_str(self, i) :
-        atwin = alphabetized_qtwin(self._permutations[i], self.alphabet)
-        return ' '.join(atwin[0]) + ", " + ' '.join(atwin[1])
+        return self.vertex_to_all_str(i, ",")
 
 
     def edges_to_str(self, i) :
